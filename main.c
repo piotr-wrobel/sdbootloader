@@ -19,8 +19,21 @@
 // Licencja MIT                                                                  //
 ///////////////////////////////////////////////////////////////////////////////////
 
-// Ustawienia uart
-//#define BAUD 57600
+
+
+#define GLOBAL_CONFIG "config.h"
+
+#ifdef GLOBAL_CONFIG
+	#include GLOBAL_CONFIG
+#else //Uncoment this section for local settings
+	//#define UART_DEBUG
+#endif
+
+
+#ifdef UART_DEBUG
+	#include "uart.h"
+#endif
+
 #define BAUD_PRESCALE ((F_CPU + BAUD * 8L) / (BAUD * 16L) - 1) 
 
 
@@ -80,14 +93,6 @@
 
 
 
-
-
-// Inne
-//#define SIGRD 5 // Nag³ówek boot.h nie zawiera tej definicji a powinien
-
-
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Biblioteki
@@ -126,13 +131,6 @@ static uint8_t ReadByteWait(void){
 	return 0xFF;
 }
 
-// static uint8_t toChar(uint8_t liczba)
-// {
-	// if(liczba>9)
-		// return liczba+55;
-	// else
-		// return liczba+48;
-// }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Ró¿noœci zwi¹zane z pozycj¹ bootloadera w pamiêci
