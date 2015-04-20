@@ -115,8 +115,8 @@ CFLAGS += $(CDEFS)
 CFLAGS += -O$(OPT)
 # dodane optymalizacje
 #CFLAGS += -Wall
-#CFLAGS += -ffunction-sections
-#CFLAGS += -fdata-sections
+CFLAGS += -ffunction-sections
+CFLAGS += -fdata-sections
 #koniec
 
 CFLAGS += -fgnu89-inline
@@ -194,7 +194,8 @@ EXTMEMOPTS =
 # -Wl,...: tell GCC to pass this to linker.
 # -Map: create map file
 # --cref: add cross reference to map file
-LDFLAGS = -Wl,-Map=$(TARGET).map,--cref
+#LDFLAGS = -Wl,-Map=$(TARGET).map,--cref
+LDFLAGS = -Wl,--gc-sections,--relax,-Map=$(TARGET).map,--cref
 LDFLAGS += -nostartfiles
 LDFLAGS += -Wl,--relax
 LDFLAGS += -Wl,--section-start=.text=$(BLS_START)
@@ -241,7 +242,7 @@ DEBUG_HOST = localhost
 # Define programs and commands.
 
 SHELL = sh
-CC = avr-gcc
+CC = avr-gcc-4.8.1
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 SIZE = avr-size
