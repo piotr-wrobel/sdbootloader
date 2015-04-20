@@ -40,89 +40,16 @@ BAUD = 57600
 ################################################################################################
 #######               Definicje PROCESORÓW/ DEFINITONS OF DEVICES                       ########
 
-# Atmega48
-ifeq ($(MCU), atmega48)
-	SIGN = 0x48
-	BLS_START = 0xE00
-endif
-
-# Atmega8
-ifeq ($(MCU), atmega8)
-	SIGN = 0x8
-	BLS_START = 0x1E00
-endif
-
-# Atmega8A
-ifeq ($(MCU), atmega8a)
-	SIGN = 0x8A
-	BLS_START = 0x1E00
-	MCU = atmega8
-endif
-
-# Atmega88
-ifeq ($(MCU), atmega88)
-	SIGN = 0x88
-	BLS_START = 0x1E00
-endif
-
-# Atmega16
-ifeq ($(MCU), atmega16)
-	SIGN = 0x16
-	BLS_START = 0x3E00
-endif
-
-# Atmega162
-ifeq ($(MCU), atmega162)
-	SIGN = 0x18
-	BLS_START = 0x3E00
-endif
-
-# Atmega168
-ifeq ($(MCU), atmega168)
-	SIGN = 0x1E
-	BLS_START = 0x3E00
-endif
-
-# Atmega169
-ifeq ($(MCU), atmega169)
-	SIGN = 0x1F
-	BLS_START = 0x3E00
-endif
-
-# Atmega3250
-ifeq ($(MCU), atmega3250)
-	SIGN = 0x55
-	BLS_START = 0x7E00
-endif
-
 # Atmega328
 ifeq ($(MCU), atmega328)
 	SIGN = 0x3A
-	BLS_START = 0x7E00
+	BLS_START = 0x7000
 endif
 
 # Atmega328P
 ifeq ($(MCU), atmega328p)
 	SIGN = 0x3A
-	BLS_START = 0x7E00
-endif
-
-# Atmega32
-ifeq ($(MCU), atmega32)
-	SIGN = 0x32
-	BLS_START = 0x7E00
-endif
-
-# Atmega3290
-ifeq ($(MCU), atmega3290)
-	SIGN = 0x8C
-	BLS_START = 0x7E00
-endif
-
-# Atmega644
-ifeq ($(MCU), atmega644)
-	SIGN = 0x69
-	BLS_START = 0xFC00
+	BLS_START = 0x7000
 endif
 
 
@@ -138,7 +65,7 @@ endif
 FORMAT = ihex
 TARGET = main
 OBJDIR = .
-SRC = $(TARGET).c
+SRC = $(TARGET).c sd_spi.c uart.c fat16.c
 OPT = s
 
 
@@ -202,12 +129,18 @@ CFLAGS += -fno-inline-small-functions
 CFLAGS += -fno-split-wide-types
 CFLAGS += -ffreestanding
 CFLAGS += -mno-interrupts
-CFLAGS += -pedantic
+#CFLAGS += -pedantic
 CFLAGS += -Wextra
 CFLAGS += -Wno-sign-compare
 CFLAGS += -Wstrict-prototypes
 CFLAGS += -Wundef
 CFLAGS += -Wunreachable-code
+# W tym projekcie potrzebne jest wylaczenie sprawdzania scrict aliasing
+# ze wzgledu na mapowanie struktur FAT16 na bufor
+CFLAGS += -fno-strict-aliasing
+
+CFLAGS += -Wall
+CFLAGS += -Wstrict-prototypes
 CFLAGS += -Wa,-adhlns=$(<:%.c=$(OBJDIR)/%.lst)
 CFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 CFLAGS += $(CSTANDARD)

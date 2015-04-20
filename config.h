@@ -16,5 +16,9 @@
 
 
 // UART config
-#define BAUD 57600
+//#define BAUD 57600
+
+//File config
+#define FILE_NAME "ALD_UPD " //Musi byc 8 znakow, jesli mnie, to uzupelnil spacją
+#define FILE_EXT "HEX"
 
