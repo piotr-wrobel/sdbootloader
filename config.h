@@ -1,6 +1,6 @@
 
 
-#define UART_DEBUG
+//#define UART_DEBUG
 
 #ifdef UART_DEBUG
 	//#define DEBUG

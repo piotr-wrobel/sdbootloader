@@ -114,7 +114,7 @@ CFLAGS += $(COMDEFS)
 CFLAGS += $(CDEFS)
 CFLAGS += -O$(OPT)
 # dodane optymalizacje
-#CFLAGS += -Wall
+CFLAGS += -Wall
 CFLAGS += -ffunction-sections
 CFLAGS += -fdata-sections
 #koniec
@@ -129,7 +129,7 @@ CFLAGS += -fno-inline-small-functions
 CFLAGS += -fno-split-wide-types
 CFLAGS += -ffreestanding
 CFLAGS += -mno-interrupts
-#CFLAGS += -pedantic
+CFLAGS += -pedantic
 CFLAGS += -Wextra
 CFLAGS += -Wno-sign-compare
 CFLAGS += -Wstrict-prototypes

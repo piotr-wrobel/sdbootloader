@@ -100,6 +100,7 @@
 #include <avr/boot.h>
 #include <avr/pgmspace.h>
 #include <avr/eeprom.h>
+#include <avr/io.h>
 #include <avr/wdt.h>
 #include <util/delay.h>
 
@@ -188,7 +189,7 @@ int main(void)
 	if(ret) 
 	{
         #ifdef UART_DEBUG
-			UARTSendString("SD err: ");
+			UARTSendString("EXIT: SD err: ");
 			itoa(ret,po_konwersji,10);
 			UARTSendString(po_konwersji);
 		#endif
@@ -199,7 +200,7 @@ int main(void)
 	if(ret) 
 	{
         #ifdef UART_DEBUG
-			UARTSendString("\r\nFAT err: ");
+			UARTSendString("\r\nEXIT: FAT err: ");
 			itoa(ret,po_konwersji,10);
 			UARTSendString(po_konwersji);
         #endif
@@ -210,7 +211,7 @@ int main(void)
     if(ret) 
 	{
         #ifdef UART_DEBUG
-			UARTSendString("\r\nFile open err: ");
+			UARTSendString("\r\nEXIT: File open err: ");
 			itoa(ret,po_konwersji,10);
 			UARTSendString(po_konwersji);
 		#endif
@@ -223,9 +224,10 @@ int main(void)
 
 
 	uint8_t rindex=0,bajtow_w_rekordzie=0, typ_rekordu=0, suma_kontrolna=0;
-	uint8_t	suma_kontrolna_odczytana=0, bajt_danych=0, koniec_danych=0;
-	uint16_t adres=0;
+	uint8_t	suma_kontrolna_odczytana=0, bajt_danych=0, koniec_danych=0,index_slowa=0;
+	uint16_t adres=0,pageAdress=0xFFFF,Byte_Address=0, slowo_danych=0;
 	char bufor[8];
+	boot_spm_busy_wait();
 	while(fat16_state.file_left) 
 	{
 		ret = fat16_read_file(FAT16_BUFFER_SIZE);
@@ -244,7 +246,7 @@ int main(void)
 				{	
 					bufor[rindex-1]=0;
 					bajtow_w_rekordzie=strtol(bufor,NULL,16);
-					suma_kontrolna=bajtow_w_rekordzie; //Pierszy bajt do sumu kontrolnej
+					//suma_kontrolna=bajtow_w_rekordzie; //Pierszy bajt do sumu kontrolnej
 				}
 				if(bajtow_w_rekordzie) //Skladamy 4 znakowy adres
 				{
@@ -259,6 +261,25 @@ int main(void)
 				{
 					bufor[rindex-3]=0;
 					adres=strtol(bufor,NULL,16);
+					if(Byte_Address>0 && (pageAdress+Byte_Address)!=adres) //Mamy juz cos w buforze, a nowy adres rekordu nie jest kontynuacja adresowania w buforze
+					{
+						Byte_Address+=2;
+						while(Byte_Address<SPM_PAGESIZE)
+						{
+							boot_page_fill( Byte_Address, 0x0000 );
+							Byte_Address += 2;							
+						}
+						boot_page_erase( pageAdress ); //kasujemy stronê
+						boot_spm_busy_wait();
+						boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
+						boot_spm_busy_wait();
+						
+						//Co tu dalej ? trzeba sie zastanowic
+					}
+					//To ponizej, tez nie jestem pewien, czy prawidlowo tutaj sie znajduje - do sprawdzenia.
+					if(pageAdress==0xFFFF)
+						pageAdress=adres; //Pierwszy adres powinien byc poczatkiem strony - póki co brak walidacji
+					
 					suma_kontrolna+=(adres&0x00FF); //Mlodszy bajt adresu dodajemy do sumy kontrolnej
 					suma_kontrolna+=(adres>>8);		//Starszy bajt adresu dodajemy do sumy kontrolnej
 				}
@@ -286,10 +307,31 @@ int main(void)
 				}					
 				uint8_t indeks=(rindex+1)&0x01; //Indeks bedzie 0 i 1 na przemian, bo chcemy czytac jednobajtow_w_rekordziee wartosci hex(dwuznakowe)
 				bufor[indeks]=fat16_buffer[i]; //Zapelniamy bufor nowymi znakami
-				if(indeks) //Drugi znak w buforze, zamieniamy na bajt danych
+				if(indeks && !typ_rekordu) //Drugi znak w buforze, zamieniamy na bajt danych, jesli ten rekord to rekord z danymi
 				{
 					bufor[indeks+1]=0;
 					bajt_danych=strtol(bufor,NULL,16); //Mamy gotowy bajt danych
+					if(index_slowa)
+					{
+						slowo_danych=bajt_danych<<8; //Starszy bajt do slowa
+						index_slowa++;
+					}else
+					{
+						index_slowa=0;
+						slowo_danych+=bajt_danych; //Mlodszy bajt do slowa
+						boot_page_fill( Byte_Address, slowo_danych );
+						Byte_Address += 2;
+						if(Byte_Address >= SPM_PAGESIZE) //Bufor strony gotowy
+						{
+							boot_page_erase( pageAdress ); //kasujemy stronê
+							boot_spm_busy_wait();
+							boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
+							boot_spm_busy_wait();
+							Byte_Address=0;
+							pageAdress=adres+((rindex-9)>>1); // Ustalamy nowy adres strony danych (odczytany z ostatniego rekordu ihex plus juz wykorzystane dane z rekordu)
+						}
+						
+					}
 					suma_kontrolna+=bajt_danych; //Wszystkie bajty danych po kolei dodawane do sumy kontrolnej
 					#ifdef UART_DEBUG
 						itoa(rindex,po_konwersji,10);
@@ -325,14 +367,18 @@ int main(void)
 					#endif
 					if(suma_kontrolna==suma_kontrolna_odczytana) //Mamy prawidlowy rekord
 					{
-						#ifdef UART_DEBUG
-							UARTSendString("\n\rRekord prawidlowy");
-						#endif
+						if(!typ_rekordu) //rekord z danymi
+						{
+							
+						}
 					}else
 					{
 						#ifdef UART_DEBUG
-							UARTSendString("\n\rRekord bledny");
+							UARTSendString("\n\rEXIT: Blad sumy kontrolnej, adres 0x");
+							itoa(adres,po_konwersji,16);
+							UARTSendString(po_konwersji);
 						#endif
+						jump_to_app();
 					}
 				}
 				rindex++;
