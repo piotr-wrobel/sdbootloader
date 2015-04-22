@@ -32,12 +32,15 @@
 
 #ifdef UART_DEBUG
 	#include "uart.h"
-	#include <stdlib.h>
 #endif
 
 #define BAUD_PRESCALE ((F_CPU + BAUD * 8L) / (BAUD * 16L) - 1) 
 
 #define ASCII_DWUKROPEK 0x3A
+#define IHEX_RLEN_BEGIN 1
+#define IHEX_RADRESS_BEGIN 3
+#define IHEX_RTYPE_BEGIN 7
+#define IHEX_DATA_BEGIN 9
 
 
 
@@ -100,6 +103,7 @@
 #include <avr/boot.h>
 #include <avr/pgmspace.h>
 #include <avr/eeprom.h>
+#include <stdlib.h>
 #include <avr/io.h>
 #include <avr/wdt.h>
 #include <util/delay.h>
@@ -112,38 +116,14 @@
 //Pozwala wykonaæ skok do kodu po zakoñczeniu pracy bootloadera
 static void (*jump_to_app)(void) = 0x0000;
 
-// //Wysy³a bajt przez uart
-// static void SendByte( const char Data )
-// {
-	// while( !( UCSRA & (1<<UDRE) ) );
-	// UDR = Data;
-// }
-
-// //Odbiera bajt przez uart
-// static uint8_t ReadByte(void)
-// {
-	// while ( !( UCSRA & (1<<RXC) ) );
-	// return UDR;
-// }
-
-// static uint8_t ReadByteWait(void){
-		// uint8_t Timeout=200;
-		// do{
-		// if ( UCSRA & 1 << RXC )
-            // return UDR;
-             // _delay_ms(10);
-	// } while ( --Timeout );
-	// return 0xFF;
-// }
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Ró¿noœci zwi¹zane z pozycj¹ bootloadera w pamiêci
-static void skip(void) __attribute__ ((naked, section (".vectors") ));
-static void skip(void)
-{
-    asm volatile("rjmp setup");
-}
+// static void skip(void) __attribute__ ((naked, section (".vectors") ));
+// static void skip(void)
+// {
+    // asm volatile("rjmp setup");
+// }
 
 static void setup(void) __attribute__ ((naked, used, section (".init2") ));
 static void setup(void)
@@ -156,7 +136,7 @@ static void setup(void)
     SP = RAMEND; // i wsk stosu
 } 
 // Wylaczenie WatchDoga
-#ifdef WDIF 
+#ifdef WDIF
     static void __init3( 
         void ) 
         __attribute__ (( section( ".init3" ), naked, used )); 
@@ -172,13 +152,76 @@ static void setup(void)
     } 
 #endif
 
+#ifdef BUZZ_DEBUG
+static void buzzDebug(uint8_t sygnalow)
+{
+	BUZZ_PORT |= BUZZ;
+	_delay_ms(700);
+	BUZZ_PORT &=~ BUZZ;
+	_delay_ms(700);
+	for(uint8_t i=0; i<sygnalow; i++)
+	{
+		BUZZ_PORT |= BUZZ;
+		_delay_ms(300);
+		BUZZ_PORT &=~ BUZZ;
+		_delay_ms(300);
+	}
+}
+#endif
+
+static void small_itoa(uint16_t liczba, char* string, uint8_t podstawa)
+{
+	uint8_t pozycja=0;
+	uint8_t nibble=0;
+	while(liczba)
+	{
+		nibble=liczba & 0xF;
+		liczba=(liczba>>4);
+		if(nibble <= 9)
+			string[pozycja]=nibble+30;
+		else
+			string[pozycja]=nibble+65;
+		pozycja++;
+	}
+	string[pozycja]=0;
+}
+
+static unsigned int small_strtol( char *v, size_t len, long *l ){
+     register size_t i;
+     register long n = 0;
+     register char c;
+     int sign = 1;
+     int start = 0;
+ 	
+     // check we have a negative sign first
+     if( v[0] == '-' ){
+         sign = -1;
+         start = 1;
+     }
+ 
+     for( i = start; i < len; ++i ){
+         c = v[i];
+         if( c >= '0' && c <= '9' ){
+             n = ( n * 10 ) + ( c - '0' );
+         }
+         else
+             return 0;
+     }
+ 
+     *l = n * sign;
+ 
+     return 1;
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 int main(void) __attribute__ ((section (".init9"),  used, noreturn )); 
 int main(void)
 {
 	char ret;
-	
+	#ifdef BUZZ_DEBUG
+		BUZZ_DDR |= BUZZ;
+		BUZZ_PORT &=~ BUZZ;
+	#endif
 	#ifdef UART_DEBUG	
 		UARTInit();
 	#endif
@@ -188,10 +231,8 @@ int main(void)
 	ret = SD_init();
 	if(ret) 
 	{
-        #ifdef UART_DEBUG
-			UARTSendString("EXIT: SD err: ");
-			itoa(ret,po_konwersji,10);
-			UARTSendString(po_konwersji);
+		#ifdef BUZZ_DEBUG
+			buzzDebug(BUZZ_SD_ERR);
 		#endif
 		jump_to_app();
     }
@@ -199,34 +240,28 @@ int main(void)
     ret = fat16_init();
 	if(ret) 
 	{
-        #ifdef UART_DEBUG
-			UARTSendString("\r\nEXIT: FAT err: ");
-			itoa(ret,po_konwersji,10);
-			UARTSendString(po_konwersji);
-        #endif
+		#ifdef BUZZ_DEBUG
+			buzzDebug(BUZZ_FAT_ERR);
+		#endif
 		jump_to_app();
     }
 
 	ret = fat16_open_file(FILE_NAME,FILE_EXT);       
     if(ret) 
 	{
-        #ifdef UART_DEBUG
-			UARTSendString("\r\nEXIT: File open err: ");
-			itoa(ret,po_konwersji,10);
-			UARTSendString(po_konwersji);
+		#ifdef BUZZ_DEBUG
+			buzzDebug(BUZZ_FILE_ERR);
 		#endif
         jump_to_app();
     }
 	
 	
 	
-	
-
-
 	uint8_t rindex=0,bajtow_w_rekordzie=0, typ_rekordu=0, suma_kontrolna=0;
-	uint8_t	suma_kontrolna_odczytana=0, bajt_danych=0, koniec_danych=0,index_slowa=0;
-	uint16_t adres=0,pageAdress=0xFFFF,Byte_Address=0, slowo_danych=0;
+	uint8_t	suma_kontrolna_odczytana=0, bajt_danych=0, starszy_bajt_danych=0, koniec_danych=0,index_slowa=0;
+	uint16_t adres=0,pageAdress=0xFFFF,Byte_Address=0;
 	char bufor[8];
+	uint8_t bufor_strony[SPM_PAGESIZE];
 	boot_spm_busy_wait();
 	while(fat16_state.file_left) 
 	{
@@ -236,44 +271,59 @@ int main(void)
 			if(!rindex && fat16_buffer[i]==ASCII_DWUKROPEK) //Mamy nowa linie
 			{
 				rindex++;
-			}else if(rindex && rindex<3) //Do bufora dwa znaki dlugosci rekordu
+			}else if(rindex && rindex<IHEX_RADRESS_BEGIN) //Do bufora dwa znaki dlugosci rekordu
 			{
-				bufor[rindex-1]=fat16_buffer[i];
+				bufor[rindex-IHEX_RLEN_BEGIN]=fat16_buffer[i];
 				rindex++;
-			}else if(rindex && rindex<7) //Do bufora 4 znakowy adres
+			}else if(rindex && rindex<IHEX_RTYPE_BEGIN) //Do bufora 4 znakowy adres
 			{
-				if(rindex==3) //Konczymy string w buforze i zamieniamy na ilosc bajtow danych w linii
+				if(rindex==IHEX_RADRESS_BEGIN) //Konczymy string w buforze i zamieniamy na ilosc bajtow danych w linii
 				{	
-					bufor[rindex-1]=0;
+					bufor[rindex-IHEX_RLEN_BEGIN]=0;
 					bajtow_w_rekordzie=strtol(bufor,NULL,16);
 					//suma_kontrolna=bajtow_w_rekordzie; //Pierszy bajt do sumu kontrolnej
 				}
 				if(bajtow_w_rekordzie) //Skladamy 4 znakowy adres
 				{
-					bufor[rindex-3]=fat16_buffer[i]; //Zapelniamy bufor nowymi znakami
-					koniec_danych=((bajtow_w_rekordzie*2)+9); //Do ktorego znaku w rekordzie siegaja dane ?
+					bufor[rindex-IHEX_RADRESS_BEGIN]=fat16_buffer[i]; //Zapelniamy bufor nowymi znakami
+					koniec_danych=((bajtow_w_rekordzie*2)+IHEX_DATA_BEGIN); //Do ktorego znaku w rekordzie siegaja dane ?
 				}else
 					koniec_danych=0;
 				rindex++;
-			}else if(rindex && bajtow_w_rekordzie && rindex < 9 ) //Do bufora dwuznakowy typ rekordu
+			}else if(rindex && bajtow_w_rekordzie && rindex < IHEX_DATA_BEGIN ) //Do bufora dwuznakowy typ rekordu
 			{
-				if(rindex==7) //Konczymy string w buforze i zamienimy na 2 bajtowy adres
+				if(rindex==IHEX_RTYPE_BEGIN) //Konczymy string w buforze i zamienimy na 2 bajtowy adres
 				{
-					bufor[rindex-3]=0;
+					bufor[rindex-IHEX_RADRESS_BEGIN]=0;
 					adres=strtol(bufor,NULL,16);
-					if(Byte_Address>0 && (pageAdress+Byte_Address)!=adres) //Mamy juz cos w buforze, a nowy adres rekordu nie jest kontynuacja adresowania w buforze
+					if(Byte_Address > 0 && (pageAdress + Byte_Address) != adres) //Mamy juz cos w buforze, a nowy adres rekordu nie jest kontynuacja
 					{
+						#ifdef UART_DEBUG
+							small_itoa(pageAdress + Byte_Address,po_konwersji,16);
+							UARTSendString("\r\nA1 <> A2: 0x");
+							UARTSendString(po_konwersji);
+							small_itoa(adres,po_konwersji,16);
+							UARTSendString(" <> 0x");
+							UARTSendString(po_konwersji);							
+						#endif
 						Byte_Address+=2;
-						while(Byte_Address<SPM_PAGESIZE)
+						while(Byte_Address < SPM_PAGESIZE)
 						{
-							boot_page_fill( Byte_Address, 0x0000 );
+							bufor_strony[Byte_Address]=0xFF;
+							bufor_strony[Byte_Address+1]=0xFF;
+							//boot_page_fill( Byte_Address, 0xFFFF );
 							Byte_Address += 2;							
 						}
-						boot_page_erase( pageAdress ); //kasujemy stronê
-						boot_spm_busy_wait();
-						boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
-						boot_spm_busy_wait();
 						
+						for(uint8_t bufor_index=0; bufor_index < SPM_PAGESIZE; bufor_index+=2)
+							boot_page_fill( bufor_index, bufor_strony[bufor_index] );
+						#ifdef REAL_PROGRAMING
+							boot_page_erase( pageAdress ); //kasujemy stronê
+							boot_spm_busy_wait();
+							boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
+							boot_spm_busy_wait();
+						#endif
+						// Tu mozna dorobic weryfikacje zapisu w oparciu o bufor
 						//Co tu dalej ? trzeba sie zastanowic
 					}
 					//To ponizej, tez nie jestem pewien, czy prawidlowo tutaj sie znajduje - do sprawdzenia.
@@ -283,27 +333,15 @@ int main(void)
 					suma_kontrolna+=(adres&0x00FF); //Mlodszy bajt adresu dodajemy do sumy kontrolnej
 					suma_kontrolna+=(adres>>8);		//Starszy bajt adresu dodajemy do sumy kontrolnej
 				}
-				bufor[rindex-7]=fat16_buffer[i]; //Zapelniamy bufor nowymi znakami
+				bufor[rindex-IHEX_RTYPE_BEGIN]=fat16_buffer[i]; //Zapelniamy bufor nowymi znakami
 				rindex++;
-			}else if(rindex && bajtow_w_rekordzie && rindex<koniec_danych) //Tu bedziemy czytac dane
+			}else if(rindex && bajtow_w_rekordzie && rindex < koniec_danych) //Tu bedziemy czytac dane
 			{
-				if(rindex==9) //Konczymy string w buforze i zamienimy na typ rekordu
+				if(rindex==IHEX_DATA_BEGIN) //Konczymy string w buforze i zamienimy na typ rekordu
 				{
-					bufor[rindex-7]=0;
+					bufor[rindex-IHEX_RTYPE_BEGIN]=0;
 					typ_rekordu=strtol(bufor,NULL,16);
 					suma_kontrolna+=typ_rekordu; //Typ rekordu dodajemy do sumy kontrolnej
-					#ifdef UART_DEBUG
-						UARTSendString("\n\rBajtow: ");
-						itoa(bajtow_w_rekordzie,po_konwersji,10);
-						UARTSendString(po_konwersji);
-						UARTSendString("\n\rAdres: ");
-						itoa(adres,po_konwersji,16);
-						UARTSendString(po_konwersji);
-						UARTSendString("\n\rTyp: ");
-						itoa(typ_rekordu,po_konwersji,10);
-						UARTSendString(po_konwersji);
-						UARTSendString("\n\rDane: ");					
-					#endif
 				}					
 				uint8_t indeks=(rindex+1)&0x01; //Indeks bedzie 0 i 1 na przemian, bo chcemy czytac jednobajtow_w_rekordziee wartosci hex(dwuznakowe)
 				bufor[indeks]=fat16_buffer[i]; //Zapelniamy bufor nowymi znakami
@@ -313,35 +351,41 @@ int main(void)
 					bajt_danych=strtol(bufor,NULL,16); //Mamy gotowy bajt danych
 					if(index_slowa)
 					{
-						slowo_danych=bajt_danych<<8; //Starszy bajt do slowa
+						starszy_bajt_danych=bajt_danych; //Starszy bajt do slowa
 						index_slowa++;
 					}else
 					{
 						index_slowa=0;
-						slowo_danych+=bajt_danych; //Mlodszy bajt do slowa
-						boot_page_fill( Byte_Address, slowo_danych );
+						bufor_strony[Byte_Address]=starszy_bajt_danych;
+						bufor_strony[Byte_Address+1]=bajt_danych;
 						Byte_Address += 2;
 						if(Byte_Address >= SPM_PAGESIZE) //Bufor strony gotowy
 						{
-							boot_page_erase( pageAdress ); //kasujemy stronê
-							boot_spm_busy_wait();
-							boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
-							boot_spm_busy_wait();
+							#ifdef UART_DEBUG
+								small_itoa(pageAdress,po_konwersji,16);
+								UARTSendString("\r\nPa: 0x");
+								UARTSendString(po_konwersji);
+							#endif
+							
+							for(uint8_t bufor_index=0; bufor_index < SPM_PAGESIZE; bufor_index+=2)
+								boot_page_fill( bufor_index, bufor_strony[bufor_index] );
+							#ifdef REAL_PROGRAMING
+								boot_page_erase( pageAdress ); //kasujemy stronê
+								boot_spm_busy_wait();
+								boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
+								boot_spm_busy_wait();
+							#endif
+							// Tu mozna dorobic weryfikacje zapisu w oparciu o bufor
 							Byte_Address=0;
-							pageAdress=adres+((rindex-9)>>1); // Ustalamy nowy adres strony danych (odczytany z ostatniego rekordu ihex plus juz wykorzystane dane z rekordu)
+							pageAdress=adres+((rindex-IHEX_DATA_BEGIN)>>1)+1; // Ustalamy nowy adres strony danych (odczytany z ostatniego rekordu ihex plus juz wykorzystane dane z rekordu)
+							#ifdef UART_DEBUG
+								small_itoa(pageAdress,po_konwersji,16);
+								UARTSendString("\r\nNp: 0x");
+								UARTSendString(po_konwersji);
+							#endif
 						}
-						
 					}
 					suma_kontrolna+=bajt_danych; //Wszystkie bajty danych po kolei dodawane do sumy kontrolnej
-					#ifdef UART_DEBUG
-						itoa(rindex,po_konwersji,10);
-						UARTSendString("(");
-						UARTSendString(po_konwersji);
-						UARTSendString(")0x");
-						itoa(bajt_danych,po_konwersji,16);
-						UARTSendString(po_konwersji);
-						UARTSendString(",");
-					#endif
 					
 				}
 				rindex++;
@@ -356,27 +400,14 @@ int main(void)
 					bufor[2]=0;
 					suma_kontrolna_odczytana=strtol(bufor,NULL,16);
 					suma_kontrolna=0x100-suma_kontrolna; //Kodem uzupelnien do 2
-					#ifdef UART_DEBUG
-						itoa(suma_kontrolna,po_konwersji,16);
-						UARTSendString("\n\rSuma wyliczona: ");
-						UARTSendString(po_konwersji);
-						UARTSendString("\n\rSuma odczytana: ");
-						itoa(suma_kontrolna_odczytana,po_konwersji,16);
-						UARTSendString(po_konwersji);
-						UARTSendString("\n\r");
-					#endif
-					if(suma_kontrolna==suma_kontrolna_odczytana) //Mamy prawidlowy rekord
-					{
-						if(!typ_rekordu) //rekord z danymi
-						{
-							
-						}
-					}else
+					if(suma_kontrolna!=suma_kontrolna_odczytana) //Mamy prawidlowy rekord
 					{
 						#ifdef UART_DEBUG
-							UARTSendString("\n\rEXIT: Blad sumy kontrolnej, adres 0x");
-							itoa(adres,po_konwersji,16);
+							small_itoa(adres,po_konwersji,16);
 							UARTSendString(po_konwersji);
+						#endif
+						#ifdef BUZZ_DEBUG
+							buzzDebug(BUZZ_CONTROL_SUMM_ERR);
 						#endif
 						jump_to_app();
 					}

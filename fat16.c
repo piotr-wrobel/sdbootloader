@@ -110,7 +110,7 @@ char fat16_open_file(char *filename, char *ext)
 {  
     uint8_t i, bytes;
     
-#ifdef UART_DEBUG
+#ifdef UART_DEBUG2
     UARTSendString("Trying to open file [");
 	UARTSendString(filename);
 	UARTSendString(".");
