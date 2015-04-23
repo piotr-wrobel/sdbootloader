@@ -156,32 +156,30 @@ static void setup(void)
 static void buzzDebug(uint8_t sygnalow)
 {
 	BUZZ_PORT |= BUZZ;
-	_delay_ms(700);
+	_delay_ms(500);
 	BUZZ_PORT &=~ BUZZ;
-	_delay_ms(700);
+	_delay_ms(500);
 	for(uint8_t i=0; i<sygnalow; i++)
 	{
 		BUZZ_PORT |= BUZZ;
-		_delay_ms(300);
+		_delay_ms(200);
 		BUZZ_PORT &=~ BUZZ;
-		_delay_ms(300);
+		_delay_ms(200);
 	}
 }
 #endif
 
-static void small_itoa(uint16_t liczba, char* string, uint8_t podstawa)
+static void small_itoa(uint16_t liczba, char *string, uint8_t podstawa)
 {
-	uint8_t pozycja=0;
-	uint8_t nibble=0;
-	while(liczba)
+	uint8_t nibble=0,pozycja;
+	for(pozycja=0;pozycja<4;pozycja++)
 	{
-		nibble=liczba & 0xF;
-		liczba=(liczba>>4);
+		nibble=(liczba>>12);
+		liczba=(liczba<<4);
 		if(nibble <= 9)
-			string[pozycja]=nibble+30;
+			string[pozycja]=nibble+48;
 		else
-			string[pozycja]=nibble+65;
-		pozycja++;
+			string[pozycja]=nibble+55;
 	}
 	string[pozycja]=0;
 }
@@ -281,7 +279,7 @@ int main(void)
 				{	
 					bufor[rindex-IHEX_RLEN_BEGIN]=0;
 					bajtow_w_rekordzie=strtol(bufor,NULL,16);
-					//suma_kontrolna=bajtow_w_rekordzie; //Pierszy bajt do sumu kontrolnej
+					suma_kontrolna=bajtow_w_rekordzie; //Pierszy bajt do sumu kontrolnej
 				}
 				if(bajtow_w_rekordzie) //Skladamy 4 znakowy adres
 				{
@@ -403,8 +401,13 @@ int main(void)
 					if(suma_kontrolna!=suma_kontrolna_odczytana) //Mamy prawidlowy rekord
 					{
 						#ifdef UART_DEBUG
+							UARTSendString("\r\n");
 							small_itoa(adres,po_konwersji,16);
 							UARTSendString(po_konwersji);
+							small_itoa(suma_kontrolna,po_konwersji,16);
+							UARTSendString(po_konwersji);
+							small_itoa(suma_kontrolna_odczytana,po_konwersji,16);
+							UARTSendString(po_konwersji);							
 						#endif
 						#ifdef BUZZ_DEBUG
 							buzzDebug(BUZZ_CONTROL_SUMM_ERR);
