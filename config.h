@@ -3,7 +3,7 @@
 
 	#define BUZZ_DEBUG
 	#define UART_DEBUG
-	//#define REAL_PROGRAMING
+	#define REAL_PROGRAMING
 
 	#ifdef UART_DEBUG
 		//#define DEBUG
