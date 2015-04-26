@@ -101,6 +101,7 @@
 
 //Biblioteki
 #include <avr/boot.h>
+#include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <avr/eeprom.h>
 #include <stdlib.h>
@@ -119,17 +120,17 @@ static void (*jump_to_app)(void) = 0x0000;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Ró¿noœci zwi¹zane z pozycj¹ bootloadera w pamiêci
-// static void skip(void) __attribute__ ((naked, section (".vectors") ));
-// static void skip(void)
-// {
-    // asm volatile("rjmp setup");
-// }
+static void skip(void) __attribute__ ((naked, section (".vectors") ));
+static void skip(void)
+{
+    asm volatile("rjmp setup");
+}
 
 static void setup(void) __attribute__ ((naked, used, section (".init2") ));
 static void setup(void)
 {
 	
-
+	cli();
 	//Inicjacja stosu i rejestru statusu, daje równie¿ czas dla uart na inicjalizacjê
     asm volatile ( "clr __zero_reg__" );
     SREG = 0;   // Ustawiamy rej statusu
@@ -217,6 +218,7 @@ int main(void)
 	#endif
 	#ifdef UART_DEBUG	
 		UARTInit();
+		UARTSendString("\r\nStart!");
 	#endif
 
 	SPI_init();
@@ -436,7 +438,18 @@ int main(void)
 			}
 		}
     }
+#ifdef UART_DEBUG
+	UARTSendString("\r\nGotowe!");
+#endif
+	//Inicjacja stosu i rejestru statusu, daje równie¿ czas dla uart na inicjalizacjê
+    //asm volatile ( "clr __zero_reg__" );
+    //SREG = 0;   // Ustawiamy rej statusu
+    //SP = RAMEND; // i wsk stosu
+	boot_rww_enable_safe();
+	buzzDebug(BUZZ_END);
+	sei();
 	jump_to_app(); //Chyba wszystko ok, skaczemy do nowego programu :)
+	//while(1);
 
 
 

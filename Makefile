@@ -242,7 +242,7 @@ DEBUG_HOST = localhost
 # Define programs and commands.
 
 SHELL = sh
-CC = avr-gcc-4.8.1
+CC = avr-gcc-4.9.2
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 SIZE = avr-size

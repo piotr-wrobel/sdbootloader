@@ -26,6 +26,7 @@
 	#define BUZZ_FAT_ERR 2
 	#define BUZZ_FILE_ERR 3
 	#define BUZZ_CONTROL_SUMM_ERR 4
+	#define BUZZ_END 0
 
 	// UART config
 	//#define BAUD 57600
