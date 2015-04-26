@@ -212,41 +212,41 @@ int main(void) __attribute__ ((section (".init9"),  used, noreturn ));
 int main(void)
 {
 	char ret;
-	#ifdef BUZZ_DEBUG
-		BUZZ_DDR |= BUZZ;
-		BUZZ_PORT &=~ BUZZ;
-	#endif
-	#ifdef UART_DEBUG	
-		UARTInit();
-		UARTSendString("\r\nStart!");
-	#endif
+#ifdef BUZZ_DEBUG
+	BUZZ_DDR |= BUZZ;
+	BUZZ_PORT &=~ BUZZ;
+#endif
+#ifdef UART_DEBUG	
+	UARTInit();
+	UARTSendString("\r\nStart!");
+#endif
 
 	SPI_init();
     
 	ret = SD_init();
 	if(ret) 
 	{
-		#ifdef BUZZ_DEBUG
-			buzzDebug(BUZZ_SD_ERR);
-		#endif
+	#ifdef BUZZ_DEBUG
+		buzzDebug(BUZZ_SD_ERR);
+	#endif
 		jump_to_app();
     }
 	
     ret = fat16_init();
 	if(ret) 
 	{
-		#ifdef BUZZ_DEBUG
-			buzzDebug(BUZZ_FAT_ERR);
-		#endif
+	#ifdef BUZZ_DEBUG
+		buzzDebug(BUZZ_FAT_ERR);
+	#endif
 		jump_to_app();
     }
 
 	ret = fat16_open_file(FILE_NAME,FILE_EXT);       
     if(ret) 
 	{
-		#ifdef BUZZ_DEBUG
-			buzzDebug(BUZZ_FILE_ERR);
-		#endif
+	#ifdef BUZZ_DEBUG
+		buzzDebug(BUZZ_FILE_ERR);
+	#endif
         jump_to_app();
     }
 	
@@ -298,15 +298,15 @@ int main(void)
 						pageAdress=adres; //Pierwszy adres powinien byc poczatkiem strony - póki co brak walidacji
 					else if(Byte_Address > 0 && (pageAdress + Byte_Address) != adres) //Mamy juz cos w buforze, a nowy adres rekordu nie jest kontynuacja
 					{
-						#ifdef UART_DEBUG
-							UARTSendString("\r\nA1!A2:");
-							small_uitoa(pageAdress,po_konwersji,16);
-							UARTSendString(po_konwersji);
-							small_uitoa(Byte_Address,po_konwersji,16);
-							UARTSendString(po_konwersji);							
-							small_uitoa(adres,po_konwersji,16);
-							UARTSendString(po_konwersji);							
-						#endif
+					#ifdef UART_DEBUG
+						UARTSendString("\r\nA1!A2:");
+						small_uitoa(pageAdress,po_konwersji,16);
+						UARTSendString(po_konwersji);
+						small_uitoa(Byte_Address,po_konwersji,16);
+						UARTSendString(po_konwersji);							
+						small_uitoa(adres,po_konwersji,16);
+						UARTSendString(po_konwersji);							
+					#endif
 						Byte_Address+=2;
 						while(Byte_Address < SPM_PAGESIZE)
 						{
@@ -318,12 +318,12 @@ int main(void)
 						
 						for(uint8_t bufor_index=0; bufor_index < SPM_PAGESIZE; bufor_index+=2)
 							boot_page_fill( bufor_index, (uint16_t)(bufor_strony[bufor_index+1]<<8)+bufor_strony[bufor_index] );
-						#ifdef REAL_PROGRAMING
-							boot_page_erase( pageAdress ); //kasujemy stronê
-							boot_spm_busy_wait();
-							boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
-							boot_spm_busy_wait();
-						#endif
+					#ifdef REAL_PROGRAMING
+						boot_page_erase( pageAdress ); //kasujemy stronê
+						boot_spm_busy_wait();
+						boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
+						boot_spm_busy_wait();
+					#endif
 						// Tu mozna dorobic weryfikacje zapisu w oparciu o bufor
 						pageAdress=adres;
 						Byte_Address=0;
@@ -366,28 +366,28 @@ int main(void)
 							Byte_Address += 2;
 							if(Byte_Address >= SPM_PAGESIZE) //Bufor strony gotowy
 							{
-								#ifdef UART_DEBUG
-									small_uitoa(pageAdress,po_konwersji,16);
-									UARTSendString("\r\nPa: 0x");
-									UARTSendString(po_konwersji);
-								#endif
-								
-								for(uint8_t bufor_index=0; bufor_index < SPM_PAGESIZE; bufor_index+=2)
-									boot_page_fill( bufor_index, (uint16_t)(bufor_strony[bufor_index+1]<<8)+bufor_strony[bufor_index] );
-								#ifdef REAL_PROGRAMING
-									boot_page_erase( pageAdress ); //kasujemy stronê
-									boot_spm_busy_wait();
-									boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
-									boot_spm_busy_wait();
-								#endif
-								// Tu mozna dorobic weryfikacje zapisu w oparciu o bufor
-								Byte_Address=0;
-								pageAdress=adres+((rindex-IHEX_DATA_BEGIN)>>1)+1; // Ustalamy nowy adres strony danych (odczytany z ostatniego rekordu ihex plus juz wykorzystane dane z rekordu)
-								#ifdef UART_DEBUG
-									small_uitoa(pageAdress,po_konwersji,16);
-									UARTSendString("\r\nNp: 0x");
-									UARTSendString(po_konwersji);
-								#endif
+							#ifdef UART_DEBUG
+								small_uitoa(pageAdress,po_konwersji,16);
+								UARTSendString("\r\nPa: 0x");
+								UARTSendString(po_konwersji);
+							#endif
+							
+							for(uint8_t bufor_index=0; bufor_index < SPM_PAGESIZE; bufor_index+=2)
+								boot_page_fill( bufor_index, (uint16_t)(bufor_strony[bufor_index+1]<<8)+bufor_strony[bufor_index] );
+							#ifdef REAL_PROGRAMING
+								boot_page_erase( pageAdress ); //kasujemy stronê
+								boot_spm_busy_wait();
+								boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
+								boot_spm_busy_wait();
+							#endif
+							// Tu mozna dorobic weryfikacje zapisu w oparciu o bufor
+							Byte_Address=0;
+							pageAdress=adres+((rindex-IHEX_DATA_BEGIN)>>1)+1; // Ustalamy nowy adres strony danych (odczytany z ostatniego rekordu ihex plus juz wykorzystane dane z rekordu)
+							#ifdef UART_DEBUG
+								small_uitoa(pageAdress,po_konwersji,16);
+								UARTSendString("\r\nNp: 0x");
+								UARTSendString(po_konwersji);
+							#endif
 							}
 						}
 					}
@@ -414,18 +414,18 @@ int main(void)
 					suma_kontrolna=0x100-suma_kontrolna; //Kodem uzupelnien do 2
 					if(suma_kontrolna!=suma_kontrolna_odczytana) //Mamy prawidlowy rekord
 					{
-						#ifdef UART_DEBUG
-							UARTSendString("\r\n");
-							small_uitoa(adres,po_konwersji,16);
-							UARTSendString(po_konwersji);
-							small_uitoa(suma_kontrolna,po_konwersji,16);
-							UARTSendString(po_konwersji);
-							small_uitoa(suma_kontrolna_odczytana,po_konwersji,16);
-							UARTSendString(po_konwersji);							
-						#endif
-						#ifdef BUZZ_DEBUG
-							buzzDebug(BUZZ_CONTROL_SUMM_ERR);
-						#endif
+					#ifdef UART_DEBUG
+						UARTSendString("\r\n");
+						small_uitoa(adres,po_konwersji,16);
+						UARTSendString(po_konwersji);
+						small_uitoa(suma_kontrolna,po_konwersji,16);
+						UARTSendString(po_konwersji);
+						small_uitoa(suma_kontrolna_odczytana,po_konwersji,16);
+						UARTSendString(po_konwersji);							
+					#endif
+					#ifdef BUZZ_DEBUG
+						buzzDebug(BUZZ_CONTROL_SUMM_ERR);
+					#endif
 						//jump_to_app();
 						while(1); //Tu lepiej zapetlic, niz skakac do programu, bo program jest uszkodzony
 					}
@@ -446,149 +446,11 @@ int main(void)
     //SREG = 0;   // Ustawiamy rej statusu
     //SP = RAMEND; // i wsk stosu
 	boot_rww_enable_safe();
+#ifdef BUZZ_DEBUG
 	buzzDebug(BUZZ_END);
+#endif
 	sei();
 	jump_to_app(); //Chyba wszystko ok, skaczemy do nowego programu :)
-	//while(1);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Stara wersja bootloadera - do wykorzystania !
-
-	// //W³¹cz uart
-	// UBRRL = BAUD_PRESCALE;
-	// UBRRH = (BAUD_PRESCALE >> 8);
-	// UCSRB |= (1<<RXEN)|(1<<TXEN); 	
-	// _delay_ms(10);
-	
-	
-	// // ^ dane:8 bitów, 1 bit parzystoœci
-
-	// // Wysy³amy znak zachêty i czekamy na odpowiedz
-	// SendByte( '?' );
-
-
-	// //Sprawdzenie je¿eli nie ma odpowiedzi lub ró¿ni siê ona od 's' to bootloader skacze do programu
-
-	
-	
-	// uint8_t test = ReadByteWait();
-	// uint8_t low,high,data;
-	// if( test == 's')
-	// {
-		// //Wysy³amy nag³ówek
-		// SendByte( 0xA0 ); // Oznaczenie wersji bootloadera
-		// SendByte( SIGN ); // Sygnatura procesora z Makefile
-		// SendByte( boot_lock_fuse_bits_get( GET_LOW_FUSE_BITS  ) );  //Fusebity
-		// SendByte( boot_lock_fuse_bits_get( GET_HIGH_FUSE_BITS ) );
-		// SendByte( boot_lock_fuse_bits_get( GET_LOCK_BITS      ) );
-		
-		// uint8_t command;
-		// //G³ówna pêtla
-		// while ( 1 )
-		// {
-			// // Odczyt rozkazu 
-			// command = ReadByte();
-			
-			// // === ZAPIS PAMIÊCI FLASH ===
-			// if (command=='F')
-			// {
-				 // uint8_t crc = 0xFF;
-				// // odczekanie do zakoñczenia dzia³añ na EEPROM i flash 
-				// boot_spm_busy_wait();
-				
-				// // Odebranie adresu
-				// low  = ReadByte();
-				// crc^=low;
-				// high = ReadByte();
-				// crc^=high;
-				// uint16_t pageAdress =  ( uint16_t )low + ( high <<8 );
-
-				// if( pageAdress >= BLS_START ) break;
-				// // Skasowanie strony
-				// boot_page_erase( pageAdress );
-				// boot_spm_busy_wait();
-					
-				// //Znak gotowoœci na dane
-				// SendByte( '>' );
-					
-				// //Zape³niamy bufor strony
-				// for ( uint16_t Byte_Address = 0; Byte_Address < SPM_PAGESIZE; Byte_Address += 2 )
-				// {
-					// // przygotowanie 2 bajtowej instrukcji, obliczenie chksum i zapisanie bufora
-					// low  = ReadByte();
-					// high = ReadByte();
-					// crc^=low;
-					// crc^=high;
-					// uint16_t Instruction = (uint16_t)low + ( high << 8 );
-					// boot_page_fill( Byte_Address, Instruction );
-				// }
-				// // Wys³anie sumy kontrolnej w celu weryfikacji
-				// SendByte(crc);
-				// // Je¿eli weryfikacja siê powiod³a to zapisujemy
-				// if(ReadByte()=='k')
-				// {
-					// //Zapisane strony
-					// boot_page_write( pageAdress );
-					// boot_spm_busy_wait();
-				// }
-				
-			// }else //Koniec zapisu flash
-			
-			
-			// // === ODCZYT Strony FLASH ===
-			// if(command=='f')
-			// {
-				// low=ReadByte();
-				// high=ReadByte();
-				// uint16_t address = ( ( uint16_t )low + (high<<8));
-				// data = SPM_PAGESIZE;
-				// while(data--)
-				// {
-					// SendByte( pgm_read_byte_near( ( uint8_t *)(address-data ) ));
-					
-				// }
-			// }else
-		
-			// // === ODCZYT BAJTU EEPROM ===
-			// if(command=='e')
-			// {
-				
-				// low=ReadByte();
-				// high=ReadByte();
-				// SendByte(eeprom_read_byte((uint8_t *)(( uint16_t)low + (high<<8))) );
-			// }else
-			
-			// // === ZAPIS BAJTU EEPROM ===
-			// if(command=='E')
-			// {
-				// low=ReadByte();
-				// high=ReadByte();
-				// data=ReadByte();
-				// eeprom_write_byte((uint8_t *)(( uint16_t)low + (high<<8)), data );
-			// }else
-			
-			// break;
-		// }
-	// }
-	// SendByte( 'Q' );
-	// UCSRB = 0;
-	// jump_to_app(); 
-	// while(1);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //EOF
