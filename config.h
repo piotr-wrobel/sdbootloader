@@ -16,6 +16,12 @@
 	#define MOSI (1<<PB3)
 	#define MISO (1<<PB4)
 	#define SCK (1<<PB5)
+	
+	// BOOTLOADER BUTTON
+	#define DDR_BUTT	DDRD
+	#define PORT_BUTT	PORTD
+	#define PIN_BUTT	PIND
+	#define BUTTON		PD5
 
 	//BUZZER
 	#define BUZZ (1<<PD4)
@@ -27,6 +33,7 @@
 	#define BUZZ_FILE_ERR 3
 	#define BUZZ_CONTROL_SUMM_ERR 4
 	#define BUZZ_END 0
+	#define BUZZ_BEGIN 0
 
 	// UART config
 	//#define BAUD 57600
