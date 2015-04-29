@@ -217,6 +217,46 @@ static void printPage(uint16_t page_begin,uint16_t page_end)
 }
 #endif
 
+static void verifyPage(uint16_t pageAdress, uint8_t *bufor_strony)
+{
+	boot_rww_enable_safe();
+	// Weryfikacja zapisanej strony
+	for(uint8_t bufor_index=0; bufor_index < SPM_PAGESIZE; bufor_index++)
+	{
+		uint8_t odczytany_bajt=pgm_read_byte_near( ( uint8_t *)(pageAdress+bufor_index) );
+		if(bufor_strony[bufor_index] != odczytany_bajt)
+		{
+		#ifdef BUZZ_DEBUG
+			buzzDebug(1,BUZZ_VERIF_ERR,200);
+		#endif
+		#ifdef UART_DEBUG
+			UARTSendString("\r\nVer err: 0x");
+			small_uitoa(pageAdress+bufor_index,po_konwersji,16);
+			UARTSendString(po_konwersji);
+			small_uitoa((bufor_strony[bufor_index]<<8)+odczytany_bajt,po_konwersji,16);
+			UARTSendString(" -> ");
+			UARTSendString(po_konwersji);
+		#endif
+			while(1); //Tu lepiej zapetlic, niz skakac do programu, bo program jest uszkodzony
+		}
+	}
+}
+
+static void writePage(uint16_t pageAdress,uint8_t *bufor_strony)
+{
+	for(uint8_t bufor_index=0; bufor_index < SPM_PAGESIZE; bufor_index+=2)
+		boot_page_fill( bufor_index, (uint16_t)(bufor_strony[bufor_index+1]<<8)+bufor_strony[bufor_index] );
+#ifdef REAL_PROGRAMING
+	boot_page_erase( pageAdress ); //kasujemy stronê
+	#ifdef BUZZ_DEBUG
+		buzzDebug(0,1,50);
+	#endif
+	boot_spm_busy_wait();
+	boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
+	boot_spm_busy_wait();
+#endif
+}
+
 int main(void) __attribute__ ((section (".init9"),  used, noreturn )); 
 int main(void)
 {
@@ -329,27 +369,12 @@ int main(void)
 							Byte_Address += 2;							
 						}
 						
-						for(uint8_t bufor_index=0; bufor_index < SPM_PAGESIZE; bufor_index+=2)
-							boot_page_fill( bufor_index, (uint16_t)(bufor_strony[bufor_index+1]<<8)+bufor_strony[bufor_index] );
-					#ifdef REAL_PROGRAMING
-						boot_page_erase( pageAdress ); //kasujemy stronê
-						#ifdef BUZZ_DEBUG
-							buzzDebug(0,1,50);
-						#endif
-						boot_spm_busy_wait();
-						boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
-						boot_spm_busy_wait();
-					#endif
+						writePage(pageAdress,bufor_strony);
+						// Weryfikacja zapisanej strony
+						verifyPage(pageAdress, bufor_strony);
 					#ifdef UART_DEBUG
-						// small_uitoa(pageAdress,po_konwersji,16);
-						// UARTSendString("\r\nPage: 0x");
-						// UARTSendString(po_konwersji);
-						// small_uitoa(pageAdress+SPM_PAGESIZE-1,po_konwersji,16);
-						// UARTSendString(" -> 0x");
-						// UARTSendString(po_konwersji);
 						printPage(pageAdress,pageAdress+SPM_PAGESIZE-1);
 					#endif
-					// Tu mozna dorobic weryfikacje zapisu w oparciu o bufor
 						pageAdress=adres;
 						Byte_Address=0;
 					}
@@ -391,29 +416,14 @@ int main(void)
 							{
 							#ifdef UART_DEBUG
 								uint16_t oldPageAdress=pageAdress;
-								//small_uitoa(pageAdress,po_konwersji,16);
 							#endif
 							
-							for(uint8_t bufor_index=0; bufor_index < SPM_PAGESIZE; bufor_index+=2)
-								boot_page_fill( bufor_index, (uint16_t)(bufor_strony[bufor_index+1]<<8)+bufor_strony[bufor_index] );
-							#ifdef REAL_PROGRAMING
-								boot_page_erase( pageAdress ); //kasujemy stronê
-								#ifdef BUZZ_DEBUG
-									buzzDebug(0,1,50);
-								#endif
-								boot_spm_busy_wait();
-								boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
-								boot_spm_busy_wait();
-							#endif
-							// Tu mozna dorobic weryfikacje zapisu w oparciu o bufor
+							writePage(pageAdress,bufor_strony);
+							// Weryfikacja zapisanej strony
+							verifyPage(pageAdress, bufor_strony);
 							Byte_Address=0;
 							pageAdress=adres+((rindex-IHEX_DATA_BEGIN)>>1)+1; // Ustalamy nowy adres strony danych (odczytany z ostatniego rekordu ihex plus juz wykorzystane dane z rekordu)
 							#ifdef UART_DEBUG
-								// UARTSendString("\r\nPage: 0x");
-								// UARTSendString(po_konwersji);
-								// small_uitoa(pageAdress-1,po_konwersji,16);
-								// UARTSendString(" -> 0x");
-								// UARTSendString(po_konwersji);
 								printPage(oldPageAdress,pageAdress-1);
 							#endif
 							}
@@ -463,7 +473,6 @@ int main(void)
 			}
 		}
     }
-	boot_rww_enable_safe();
 #ifdef UART_DEBUG
 	UARTSendString("\r\nGotowe!");
 #endif
