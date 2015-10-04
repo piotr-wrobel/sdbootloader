@@ -15,18 +15,18 @@ char fat16_init()
         
     for(i=0; i<4; i++) { 
         fat16_read(sizeof(PartitionTable));
-#ifdef DEBUG
+#ifdef FAT_DEBUG
 		uint8_t j;
 		UARTSendString("Partycja nr [");
-		itoa(i,po_konwersji,10);
+		UARTuitoa(i,po_konwersji);
 		UARTSendString(po_konwersji);
 		UARTSendString("] typ: ");
-		itoa(FAT16_part->partition_type,po_konwersji,10);
+		UARTuitoa(FAT16_part->partition_type,po_konwersji);
 		UARTSendString(po_konwersji);
 		UARTSendString("\r\n RAW: ");
 		for(j=0; j<sizeof(PartitionTable); j++)
 		{
-			itoa(fat16_buffer[j],po_konwersji,16);
+			UARTuitoa(fat16_buffer[j],po_konwersji);
 			if(!(j%8))
 				UARTSendString("\r\n");
 			else
@@ -56,21 +56,21 @@ char fat16_init()
     
     fat16_state.fat_start += FAT16_boot->reserved_sectors * 512;
  
-#ifdef DEBUG
+#ifdef FAT_DEBUG
     fat16_seek(fat16_state.fat_start);
     UARTSendString("FAT + reserved at: ");
-	itoa(sd_sector>>16,po_konwersji,16);
+	UARTuitoa(sd_sector>>16,po_konwersji);
 	UARTSendString(po_konwersji);
-	itoa(sd_sector&0xFFFF,po_konwersji,16);
+	UARTuitoa(sd_sector&0xFFFF,po_konwersji);
 	UARTSendString(po_konwersji);	
 	UARTSendString(" offset: ");
-	itoa(sd_pos,po_konwersji,16);
+	UARTuitoa(sd_pos,po_konwersji);
 	UARTSendString(po_konwersji);
 	UARTSendString("\r\n");
-	itoa(FAT16_boot->fat_size_sectors,po_konwersji,16);
+	UARTuitoa(FAT16_boot->fat_size_sectors,po_konwersji);
 	UARTSendString("FAT size sectors: ");
 	UARTSendString(po_konwersji);
-	itoa(FAT16_boot->number_of_fats,po_konwersji,16);
+	UARTuitoa(FAT16_boot->number_of_fats,po_konwersji);
 	UARTSendString(" Numbers of FAT'S: ");
 	UARTSendString(po_konwersji);
 	UARTSendString("\r\n");
@@ -88,14 +88,14 @@ char fat16_init()
 
            
     fat16_seek(root_start);
-#ifdef DEBUG
+#ifdef FAT_DEBUG
     UARTSendString("Root start at: ");
-	itoa(sd_sector>>16,po_konwersji,16);
+	UARTuitoa(sd_sector>>16,po_konwersji);
 	UARTSendString(po_konwersji);
-	itoa(sd_sector&0xFFFF,po_konwersji,16);
+	UARTuitoa(sd_sector&0xFFFF,po_konwersji);
 	UARTSendString(po_konwersji);	
 	UARTSendString(" offset: ");
-	itoa(sd_pos,po_konwersji,16);
+	UARTuitoa(sd_pos,po_konwersji);
 	UARTSendString(po_konwersji);
 	UARTSendString("\r\n");
 #endif	
@@ -110,7 +110,7 @@ char fat16_open_file(char *filename, char *ext)
 {  
     uint8_t i, bytes;
     
-#ifdef UART_DEBUG2
+#ifdef FAT_DEBUG
     UARTSendString("Trying to open file [");
 	UARTSendString(filename);
 	UARTSendString(".");
@@ -124,7 +124,7 @@ char fat16_open_file(char *filename, char *ext)
         if(bytes < sizeof(Fat16Entry))
             return FAT16_ERR_FILE_READ;
 		
-#ifdef DEBUG
+#ifdef FAT_DEBUG
         char plik[13];
 		if(FAT16_entry->filename[0])
         {    

@@ -221,7 +221,7 @@ int main(void)
 	PORT_BUTT |= (1<<BUTTON); //Rezystor podciagajacy
 	if(PIN_BUTT&(1<<BUTTON))
 		jump_to_app(); //Button nie jest wcisniety, od razu uciekamy z bootloadera
-	_delay_ms(5000); //Czekamy 5 sekund
+	_delay_ms(3000); //Czekamy 3 sekundy
 	if(PIN_BUTT&(1<<BUTTON))
 		jump_to_app(); //Byl wcisniety, ale nie jest, uciekamy z bootloadera
 	

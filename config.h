@@ -3,11 +3,10 @@
 
 	#define BUZZ_DEBUG
 	#define UART_DEBUG
+	//#define SD_DEBUG
+	//#define FAT_DEBUG
 	#define REAL_PROGRAMING
 
-	#ifdef UART_DEBUG
-		//#define DEBUG
-	#endif
 
 	// SPI config
 	#define CS (1<<PB2)

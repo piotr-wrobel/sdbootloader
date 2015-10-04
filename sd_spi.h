@@ -7,8 +7,6 @@
 	#ifdef GLOBAL_CONFIG
 		#include GLOBAL_CONFIG
 	#else //Uncoment this section for local settings
-		//#define DEBUG
-
 		// #define CS (1<<PB2)
 		// #define CS_PORT PORTB
 		// #define CS_DDR DDRB
@@ -22,9 +20,10 @@
 		#include "uart.h"
 	#endif
 
-	#ifdef DEBUG
-		#include <stdlib.h>
-		#include <avr/io.h>
+	#ifdef SD_DEBUG
+		//#include <stdlib.h>
+		//#include <avr/io.h>
+		#include "uart.h"
 	#endif
 
 	#define CS_ENABLE() (CS_PORT &= ~CS)

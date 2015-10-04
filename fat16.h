@@ -20,25 +20,17 @@
 	#include "uart.h"
 #endif
 
-#ifdef DEBUG
-    #include <stdlib.h>
-	#include <avr/io.h>
+#ifdef FAT_DEBUG
+	//#include <stdlib.h>
+	//#include <avr/io.h>
+	#include "uart.h"
 #endif
 
 #define FAT16_BUFFER_SIZE 32
 
-// Global variables for read data and library state
-
-#ifdef DEBUG
-	extern uint8_t UARTSendString(char *napis);
-	extern char po_konwersji[5];    
-#endif 
-
 extern uint32_t sd_sector;
 extern uint16_t sd_pos;
 extern int8_t SD_read(uint32_t sector, uint16_t offset, volatile char * buffer, uint16_t len);
-
-
 
 
 char fat16_buffer[FAT16_BUFFER_SIZE];

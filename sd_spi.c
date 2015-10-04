@@ -1,5 +1,24 @@
 #include "sd_spi.h"
 
+uint8_t SPI_write(uint8_t ch)
+{
+	#ifdef SD_DEBUG
+		UARTuitoa(ch,po_konwersji);
+		UARTSendString("S: ");
+		UARTSendString(po_konwersji);
+	#endif
+		_delay_us(200);
+		SPDR = ch;
+		while(!(SPSR & (1<<SPIF))) {}	
+	#ifdef SD_DEBUG
+		UARTSendString(" R: ");
+		UARTuitoa(SPDR,po_konwersji);
+		UARTSendString(po_konwersji);
+		UARTSendString("\r\n");
+	#endif
+		//_delay_us(100);
+		return SPDR;
+}
 
 char SD_init(void) 
 {
@@ -51,17 +70,17 @@ int8_t SD_read(uint32_t sector, uint16_t offset, volatile char * buffer, uint16_
     if(i==10) return 1;
     for(i=0; i<10 && SPI_write(0xFF) != 0xFE; i++) {} // wait for data start
     if(i==10) return 2;
-#ifdef DEBUG
+#ifdef SD_DEBUG
     UARTSendString("Skip section start\r\n");
 #endif
     for(i=0; i<offset; i++) // "skip" bytes
         SPI_write(0xFF);
-#ifdef DEBUG
+#ifdef SD_DEBUG
     UARTSendString("Read section start\r\n");
 #endif        
     for(i=0; i<len; i++) // read len bytes
         buffer[i] = SPI_write(0xFF);
- #ifdef DEBUG
+ #ifdef SD_DEBUG
     UARTSendString("Skip after section start\r\n");
 #endif       
     for(i+=offset; i<512; i++) // "skip" again
@@ -85,26 +104,6 @@ void SPI_init(void)
 	// Enable SPI, master, set clock rate fck/128
 	SPCR = (1<<SPE) | (1<<MSTR) | (1<<SPR0) | (1<<SPR1);
 	//SPCR = (1<<SPE) | (1<<MSTR) | (1<<SPR1); //fsck/64
-}
-
-uint8_t SPI_write(uint8_t ch)
-{
-	#ifdef DEBUG
-		itoa(ch,po_konwersji,16);
-		UARTSendString("S: ");
-		UARTSendString(po_konwersji);
-	#endif
-		_delay_us(200);
-		SPDR = ch;
-		while(!(SPSR & (1<<SPIF))) {}	
-	#ifdef DEBUG
-		UARTSendString(" R: ");
-		itoa(SPDR,po_konwersji,16);
-		UARTSendString(po_konwersji);
-		UARTSendString("\r\n");
-	#endif
-		//_delay_us(100);
-		return SPDR;
 }
 
 uint8_t SD_command(uint8_t cmd, uint32_t arg, uint8_t crc, uint8_t read)
