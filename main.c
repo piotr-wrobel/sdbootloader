@@ -34,6 +34,10 @@
 	#include "uart.h"
 #endif
 
+#ifdef BUZZ_DEBUG
+	#include "buzz.h"
+#endif
+
 #define BAUD_PRESCALE ((F_CPU + BAUD * 8L) / (BAUD * 16L) - 1) 
 
 #define ASCII_DWUKROPEK 0x3A
@@ -168,54 +172,6 @@ static unsigned int hexstr2ui16( char *string, uint8_t start, uint8_t size )
 	return wynik;
 }
 
-#ifdef BUZZ_DEBUG
-static void buzzDebug(uint8_t l_sygnalow, uint8_t s_sygnalow, uint8_t s_trwa)
-{
-	for(uint8_t i=0; i<l_sygnalow; i++)
-	{
-		BUZZ_PORT |= BUZZ;
-		_delay_ms(500);
-		BUZZ_PORT &=~ BUZZ;
-		_delay_ms(500);
-	}
-	for(uint8_t i=0; i<s_sygnalow; i++)
-	{
-		BUZZ_PORT |= BUZZ;
-		for(uint8_t j=0; j<s_trwa; j++)
-			_delay_ms(1);
-		BUZZ_PORT &=~ BUZZ;
-		_delay_ms(200);
-	}
-}
-#endif
-
-#ifdef UART_DEBUG
-static void small_uitoa(uint16_t liczba, char *string, uint8_t podstawa)
-{
-	uint8_t nibble=0,pozycja;
-	for(pozycja=0;pozycja<4;pozycja++)
-	{
-		nibble=(liczba>>12);
-		liczba=(liczba<<4);
-		if(nibble <= 9)
-			nibble+=48;
-		else
-			nibble+=55;
-		string[pozycja]=nibble;
-	}
-	string[pozycja]=0;
-}
-
-static void printPage(uint16_t page_begin,uint16_t page_end)
-{
-	small_uitoa(page_begin,po_konwersji,16);
-	UARTSendString("\r\nPage: 0x");
-	UARTSendString(po_konwersji);
-	small_uitoa(page_end,po_konwersji,16);
-	UARTSendString(" -> 0x");
-	UARTSendString(po_konwersji);
-}
-#endif
 
 static void verifyPage(uint16_t pageAdress, uint8_t *bufor_strony)
 {
@@ -227,13 +183,13 @@ static void verifyPage(uint16_t pageAdress, uint8_t *bufor_strony)
 		if(bufor_strony[bufor_index] != odczytany_bajt)
 		{
 		#ifdef BUZZ_DEBUG
-			buzzDebug(1,BUZZ_VERIF_ERR,200);
+			buzzDebug(BUZZ_ONE_LONG,BUZZ_VERIF_ERR,200);
 		#endif
 		#ifdef UART_DEBUG
 			UARTSendString("\r\nVer err: 0x");
-			small_uitoa(pageAdress+bufor_index,po_konwersji,16);
+			UARTuitoa(pageAdress+bufor_index,po_konwersji);
 			UARTSendString(po_konwersji);
-			small_uitoa((bufor_strony[bufor_index]<<8)+odczytany_bajt,po_konwersji,16);
+			UARTuitoa((bufor_strony[bufor_index]<<8)+odczytany_bajt,po_konwersji);
 			UARTSendString(" -> ");
 			UARTSendString(po_konwersji);
 		#endif
@@ -249,7 +205,7 @@ static void writePage(uint16_t pageAdress,uint8_t *bufor_strony)
 #ifdef REAL_PROGRAMING
 	boot_page_erase( pageAdress ); //kasujemy stronê
 	#ifdef BUZZ_DEBUG
-		buzzDebug(0,1,50);
+		buzzDebug(BUZZ_ZERO_LONG,1,50);
 	#endif
 	boot_spm_busy_wait();
 	boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
@@ -272,11 +228,11 @@ int main(void)
 #ifdef BUZZ_DEBUG
 	BUZZ_DDR |= BUZZ;
 	BUZZ_PORT &=~ BUZZ;
-	buzzDebug(1,BUZZ_BEGIN,200);
+	buzzDebug(BUZZ_ONE_LONG,BUZZ_BEGIN,200);
 #endif
 #ifdef UART_DEBUG	
 	UARTInit();
-	UARTSendString("\r\nStart!");
+	UARTSendString("\r\nBOOTLOADER START!");
 #endif
 	
 	SPI_init();
@@ -285,8 +241,11 @@ int main(void)
 	if(ret) 
 	{
 	#ifdef BUZZ_DEBUG
-		buzzDebug(1,BUZZ_SD_ERR,200);
+		buzzDebug(BUZZ_ONE_LONG,BUZZ_SD_ERR,200);
 	#endif
+	#ifdef UART_DEBUG	
+		UARTSendString("\r\nSD ERROR!");
+	#endif	
 		jump_to_app();
     }
 	
@@ -294,8 +253,11 @@ int main(void)
 	if(ret) 
 	{
 	#ifdef BUZZ_DEBUG
-		buzzDebug(1,BUZZ_FAT_ERR,200);
+		buzzDebug(BUZZ_ONE_LONG,BUZZ_FAT_ERR,200);
 	#endif
+	#ifdef UART_DEBUG	
+		UARTSendString("\r\nFAT ERROR!");
+	#endif	
 		jump_to_app();
     }
 
@@ -303,8 +265,11 @@ int main(void)
     if(ret) 
 	{
 	#ifdef BUZZ_DEBUG
-		buzzDebug(1,BUZZ_FILE_ERR,200);
+		buzzDebug(BUZZ_ONE_LONG,BUZZ_FILE_ERR,200);
 	#endif
+	#ifdef UART_DEBUG	
+		UARTSendString("\r\nFILE ERROR!");
+	#endif	
         jump_to_app();
     }
 	
@@ -354,11 +319,11 @@ int main(void)
 					{
 					#ifdef UART_DEBUG
 						UARTSendString("\r\nA1!A2:");
-						small_uitoa(pageAdress,po_konwersji,16);
+						UARTuitoa(pageAdress,po_konwersji);
 						UARTSendString(po_konwersji);
-						small_uitoa(Byte_Address,po_konwersji,16);
+						UARTuitoa(Byte_Address,po_konwersji);
 						UARTSendString(po_konwersji);							
-						small_uitoa(adres,po_konwersji,16);
+						UARTuitoa(adres,po_konwersji);
 						UARTSendString(po_konwersji);							
 					#endif
 						Byte_Address+=2;
@@ -373,7 +338,7 @@ int main(void)
 						// Weryfikacja zapisanej strony
 						verifyPage(pageAdress, bufor_strony);
 					#ifdef UART_DEBUG
-						printPage(pageAdress,pageAdress+SPM_PAGESIZE-1);
+						UARTprintPage(pageAdress,pageAdress+SPM_PAGESIZE-1,po_konwersji);
 					#endif
 						pageAdress=adres;
 						Byte_Address=0;
@@ -424,7 +389,7 @@ int main(void)
 							Byte_Address=0;
 							pageAdress=adres+((rindex-IHEX_DATA_BEGIN)>>1)+1; // Ustalamy nowy adres strony danych (odczytany z ostatniego rekordu ihex plus juz wykorzystane dane z rekordu)
 							#ifdef UART_DEBUG
-								printPage(oldPageAdress,pageAdress-1);
+								UARTprintPage(oldPageAdress,pageAdress-1,po_konwersji);
 							#endif
 							}
 						}
@@ -452,15 +417,15 @@ int main(void)
 					{
 					#ifdef UART_DEBUG
 						UARTSendString("\r\n");
-						small_uitoa(adres,po_konwersji,16);
+						UARTuitoa(adres,po_konwersji);
 						UARTSendString(po_konwersji);
-						small_uitoa(suma_kontrolna,po_konwersji,16);
+						UARTuitoa(suma_kontrolna,po_konwersji);
 						UARTSendString(po_konwersji);
-						small_uitoa(suma_kontrolna_odczytana,po_konwersji,16);
+						UARTuitoa(suma_kontrolna_odczytana,po_konwersji);
 						UARTSendString(po_konwersji);							
 					#endif
 					#ifdef BUZZ_DEBUG
-						buzzDebug(1,BUZZ_CONTROL_SUMM_ERR,200);
+						buzzDebug(BUZZ_ONE_LONG,BUZZ_CONTROL_SUMM_ERR,200);
 					#endif
 						while(1); //Tu lepiej zapetlic, niz skakac do programu, bo program jest uszkodzony
 					}
@@ -477,7 +442,7 @@ int main(void)
 	UARTSendString("\r\nGotowe!");
 #endif
 #ifdef BUZZ_DEBUG
-	buzzDebug(1,BUZZ_END,200);
+	buzzDebug(BUZZ_ONE_LONG,BUZZ_END,200);
 #endif
     asm volatile ( "clr __zero_reg__" );
     SREG = 0;   // Ustawiamy rej statusu

@@ -17,11 +17,10 @@
 	#define BAUD_PRESCALE ((F_CPU + BAUD * 8L) / (BAUD * 16L) - 1)
 
 	char po_konwersji[5];
-
 	void UARTInit(void);
 	uint8_t UARTSendString_P(const uint8_t *FlashLoc);
 	uint8_t UARTSendString(char *napis);
-	void UARTSendByte( const char Data );
-	uint8_t UARTReadByte(void);
+	void UARTuitoa(uint16_t liczba, char *string);
+	void UARTprintPage(uint16_t page_begin,uint16_t page_end,char *string);
 
 #endif

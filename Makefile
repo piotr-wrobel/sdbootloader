@@ -49,7 +49,7 @@ endif
 FORMAT = ihex
 TARGET = main
 OBJDIR = .
-SRC = $(TARGET).c sd_spi.c uart.c fat16.c
+SRC = $(TARGET).c sd_spi.c uart.c buzz.c fat16.c
 OPT = s
 
 

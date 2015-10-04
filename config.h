@@ -23,11 +23,9 @@
 	#define PIN_BUTT	PIND
 	#define BUTTON		PD5
 
-	//BUZZER
-	#define BUZZ (1<<PD4)
-	#define BUZZ_DDR DDRD
-	#define BUZZ_PORT PORTD
 
+	#define BUZZ_ZERO_LONG 0
+	#define BUZZ_ONE_LONG 1
 	#define BUZZ_SD_ERR 1
 	#define BUZZ_FAT_ERR 2
 	#define BUZZ_FILE_ERR 3
