@@ -8,21 +8,10 @@
 #ifdef GLOBAL_CONFIG
 	#include GLOBAL_CONFIG
 #else //Uncoment this section for local settings
-	// #define UART_DEBUG
-
-	// #ifdef UART_DEBUG
-		// #define DEBUG
-	// #endif
-#endif
-
-
-#ifdef UART_DEBUG
-	#include "uart.h"
+	//#define FAT_DEBUG
 #endif
 
 #ifdef FAT_DEBUG
-	//#include <stdlib.h>
-	//#include <avr/io.h>
 	#include "uart.h"
 #endif
 

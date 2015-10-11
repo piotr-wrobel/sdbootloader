@@ -15,6 +15,25 @@
 	#define MOSI (1<<PB3)
 	#define MISO (1<<PB4)
 	#define SCK (1<<PB5)
+
+	//SD commands
+	#define SD_GO_IDLE 0
+	#define SD_SEND_OP_COND 1
+	#define SD_SEND_IF_COND 8
+	#define SD_SET_BLOCK_LEN 16
+	#define SD_READ_SINGLE_BLOCK 17
+	#define SD_APP_CMD 55
+	#define SD_READ_OCR 58
+	#define SD_CRC_ON_OFF 59
+
+	#define SD_SEND_APP_OP 41
+
+	#define CRC_OFF 0
+	#define CRC_ON 1
+	#define SD_BLOCK_LEN 512
+
+	#define SKIPCRC7 1
+	#define NOSKIPCRC7 0
 	
 	// BOOTLOADER BUTTON
 	#define DDR_BUTT	DDRD
