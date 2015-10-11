@@ -21,6 +21,6 @@
 	uint8_t UARTSendString_P(const uint8_t *FlashLoc);
 	uint8_t UARTSendString(char *napis);
 	void UARTuitoa(uint16_t liczba, char *string);
-	void UARTprintPage(uint16_t page_begin,uint16_t page_end,char *string);
+	void UARTprintPage(uint16_t page_begin,uint16_t page_end,char *string, uint8_t real_programing);
 
 #endif

@@ -174,9 +174,8 @@ char fat16_open_file(char *filename, char *ext)
     return FAT16_ERR_FILE_NOT_FOUND;
 }
 
-char fat16_read_file(char bytes) 
-{ // returns the bytes read
- 
+char fat16_read_file(char bytes) // returns the bytes read
+{ 
     if(fat16_state.file_left == 0)
         return 0;
     

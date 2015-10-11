@@ -59,12 +59,14 @@ void UARTuitoa(uint16_t liczba, char *string)
 	string[pozycja]=0;
 }
 
-void UARTprintPage(uint16_t page_begin,uint16_t page_end,char *string)
+void UARTprintPage(uint16_t page_begin,uint16_t page_end,char *string, uint8_t real_programing)
 {
 	UARTuitoa(page_begin,string);
-	UARTSendString("\r\nPage: 0x");
+	UARTSendString("\r\nPAGE: 0x");
 	UARTSendString(string);
 	UARTuitoa(page_end,string);
 	UARTSendString(" -> 0x");
 	UARTSendString(string);
+	if(!real_programing)
+		UARTSendString(" NP");
 }

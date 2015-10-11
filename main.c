@@ -112,6 +112,12 @@
 #include "sd_spi.h"
 #include "fat16.h"
 
+// const char VER_ERR[]	PROGMEM="\r\nVER ERR: 0x";
+// const char STRZALKA[]	PROGMEM=" -> ";
+// const char BOOTLOADER_START[]	PROGMEM="\r\nBOOTLOADER START!";
+// const char SD_ERROR[]	PROGMEM="\r\nSD ERROR!";
+// const char FAT_ERROR[]	PROGMEM="\r\nFAT ERROR!";
+// const char FILE_ERROR[]	PROGMEM="\r\nFILE ERROR!";
 
 //Pozwala wykonaæ skok do kodu po zakoñczeniu pracy bootloadera
 static void (*jump_to_app)(void) = 0x0000;
@@ -136,7 +142,7 @@ static void setup(void)
     SP = RAMEND; // i wsk stosu
 } 
 // Wylaczenie WatchDoga
-#ifdef WDIF
+#ifdef WDIF //Jesli jest zdefiniowany, to w naglowkach systemowych
     static void __init3( 
         void ) 
         __attribute__ (( section( ".init3" ), naked, used )); 
@@ -186,10 +192,12 @@ static void verifyPage(uint16_t pageAdress, uint8_t *bufor_strony)
 			buzzDebug(BUZZ_ONE_LONG,BUZZ_VERIF_ERR,200);
 		#endif
 		#ifdef UART_DEBUG
-			UARTSendString("\r\nVer err: 0x");
+			//UARTSendString_P((void *)VER_ERR);
+			UARTSendString("\r\nVER ERR: 0x");
 			UARTuitoa(pageAdress+bufor_index,po_konwersji);
 			UARTSendString(po_konwersji);
 			UARTuitoa((bufor_strony[bufor_index]<<8)+odczytany_bajt,po_konwersji);
+			//UARTSendString_P((void *)STRZALKA);
 			UARTSendString(" -> ");
 			UARTSendString(po_konwersji);
 		#endif
@@ -198,17 +206,19 @@ static void verifyPage(uint16_t pageAdress, uint8_t *bufor_strony)
 	}
 }
 
-static void writePage(uint16_t pageAdress,uint8_t *bufor_strony)
+static void writePage(uint16_t pageAdress,uint8_t *bufor_strony,uint8_t real_programing)
 {
 	for(uint8_t bufor_index=0; bufor_index < SPM_PAGESIZE; bufor_index+=2)
 		boot_page_fill( bufor_index, (uint16_t)(bufor_strony[bufor_index+1]<<8)+bufor_strony[bufor_index] );
 #ifdef REAL_PROGRAMING
-	boot_page_erase( pageAdress ); //kasujemy stronê
+	if(real_programing)
+		boot_page_erase( pageAdress ); //kasujemy stronê
 	#ifdef BUZZ_DEBUG
 		buzzDebug(BUZZ_ZERO_LONG,1,50);
 	#endif
 	boot_spm_busy_wait();
-	boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
+	if(real_programing)
+		boot_page_write( pageAdress ); //zapisujemy strone nowymi danymi
 	boot_spm_busy_wait();
 #endif
 }
@@ -216,14 +226,22 @@ static void writePage(uint16_t pageAdress,uint8_t *bufor_strony)
 int main(void) __attribute__ ((section (".init9"),  used, noreturn )); 
 int main(void)
 {
-	char ret;
-	DDR_BUTT &=~ (1<<BUTTON); // Pin buttona jako wejscie
-	PORT_BUTT |= (1<<BUTTON); //Rezystor podciagajacy
-	if(PIN_BUTT&(1<<BUTTON))
+	uint8_t real_programing=0; //Od tej zmiennej zalezy, czy na serio zapisujemy flash
+	uint8_t ret;
+	
+	DDR_BUTT &=~ ((1<<BUTT_MENU) | (1<<BUTT_SET)); // Oba jako wejscia
+	PORT_BUTT |= ((1<<BUTT_MENU) | (1<<BUTT_SET)); //Rezystor podciagajacy na obu
+	
+	if(PIN_BUTT&(1<<BUTT_MENU))
 		jump_to_app(); //Button nie jest wcisniety, od razu uciekamy z bootloadera
 	_delay_ms(3000); //Czekamy 3 sekundy
-	if(PIN_BUTT&(1<<BUTTON))
+	if(PIN_BUTT&(1<<BUTT_MENU))
 		jump_to_app(); //Byl wcisniety, ale nie jest, uciekamy z bootloadera
+	
+	if(PIN_BUTT&(1<<BUTT_SET))
+		real_programing=1;
+	else
+		real_programing=0;
 	
 #ifdef BUZZ_DEBUG
 	BUZZ_DDR |= BUZZ;
@@ -232,6 +250,7 @@ int main(void)
 #endif
 #ifdef UART_DEBUG	
 	UARTInit();
+	//UARTSendString_P((void *)BOOTLOADER_START);
 	UARTSendString("\r\nBOOTLOADER START!");
 #endif
 	
@@ -244,6 +263,7 @@ int main(void)
 		buzzDebug(BUZZ_ONE_LONG,BUZZ_SD_ERR,200);
 	#endif
 	#ifdef UART_DEBUG	
+		//UARTSendString_P((void *)SD_ERROR);
 		UARTSendString("\r\nSD ERROR!");
 	#endif	
 		jump_to_app();
@@ -256,6 +276,7 @@ int main(void)
 		buzzDebug(BUZZ_ONE_LONG,BUZZ_FAT_ERR,200);
 	#endif
 	#ifdef UART_DEBUG	
+		//UARTSendString_P((void *)FAT_ERROR);
 		UARTSendString("\r\nFAT ERROR!");
 	#endif	
 		jump_to_app();
@@ -268,6 +289,7 @@ int main(void)
 		buzzDebug(BUZZ_ONE_LONG,BUZZ_FILE_ERR,200);
 	#endif
 	#ifdef UART_DEBUG	
+		//UARTSendString_P((void *)FILE_ERROR);
 		UARTSendString("\r\nFILE ERROR!");
 	#endif	
         jump_to_app();
@@ -275,9 +297,9 @@ int main(void)
 	
 	
 	
-	uint8_t rindex=0,bajtow_w_rekordzie=0, typ_rekordu=0, suma_kontrolna=0;
-	uint8_t	suma_kontrolna_odczytana=0, bajt_danych=0, starszy_bajt_danych=0, koniec_danych=0,index_slowa=0;
-	uint16_t adres=0,pageAdress=0xFFFF,Byte_Address=0;
+	uint8_t rindex=0,bajtow_w_rekordzie=0, typ_rekordu=0, suma_kontrolna=0, klucz=0;
+	uint8_t	suma_kontrolna_odczytana=0, bajt_danych=0, nbajt_danych=0,starszy_bajt_danych=0, koniec_danych=0,index_slowa=0;
+	uint16_t adres=0,pageAdress=0xFFFF,Byte_Address=0,aktualny_adres=0;
 	char bufor[8];
 	uint8_t bufor_strony[SPM_PAGESIZE];
 	boot_spm_busy_wait();
@@ -318,11 +340,10 @@ int main(void)
 					else if(Byte_Address > 0 && (pageAdress + Byte_Address) != adres) //Mamy juz cos w buforze, a nowy adres rekordu nie jest kontynuacja
 					{
 					#ifdef UART_DEBUG
-						UARTSendString("\r\nA1!A2:");
-						UARTuitoa(pageAdress,po_konwersji);
+						UARTSendString("\r\nA1!A2:0x");
+						UARTuitoa(pageAdress+Byte_Address,po_konwersji);
 						UARTSendString(po_konwersji);
-						UARTuitoa(Byte_Address,po_konwersji);
-						UARTSendString(po_konwersji);							
+						UARTSendString("!0x");							
 						UARTuitoa(adres,po_konwersji);
 						UARTSendString(po_konwersji);							
 					#endif
@@ -334,11 +355,11 @@ int main(void)
 							Byte_Address += 2;							
 						}
 						
-						writePage(pageAdress,bufor_strony);
+						writePage(pageAdress,bufor_strony, real_programing);
 						// Weryfikacja zapisanej strony
 						verifyPage(pageAdress, bufor_strony);
 					#ifdef UART_DEBUG
-						UARTprintPage(pageAdress,pageAdress+SPM_PAGESIZE-1,po_konwersji);
+						UARTprintPage(pageAdress,pageAdress+SPM_PAGESIZE-1,po_konwersji, real_programing);
 					#endif
 						pageAdress=adres;
 						Byte_Address=0;
@@ -369,6 +390,26 @@ int main(void)
 					{
 						if(!index_slowa)
 						{
+						#ifdef CODE_MASK	
+							aktualny_adres=pageAdress+Byte_Address;
+							klucz=(aktualny_adres>>4)&0xFF;
+							if((aktualny_adres&0xFF)==CODE_MASK)
+							{
+								nbajt_danych=((uint16_t)bajt_danych-klucz)&0xFF;
+							#ifdef CODE_DEBUG		
+								UARTSendString("\r\nC:");
+								UARTuitoa(bajt_danych,po_konwersji);
+								UARTSendString(po_konwersji);
+								UARTSendString("-");
+								UARTuitoa(klucz,po_konwersji);
+								UARTSendString(po_konwersji);
+								UARTSendString("=");
+								UARTuitoa(nbajt_danych,po_konwersji);
+								UARTSendString(po_konwersji);
+							#endif
+								bajt_danych=nbajt_danych;
+							}
+						#endif
 							starszy_bajt_danych=bajt_danych; //Starszy bajt do slowa
 							index_slowa++;
 						}else
@@ -382,14 +423,13 @@ int main(void)
 							#ifdef UART_DEBUG
 								uint16_t oldPageAdress=pageAdress;
 							#endif
-							
-							writePage(pageAdress,bufor_strony);
-							// Weryfikacja zapisanej strony
-							verifyPage(pageAdress, bufor_strony);
-							Byte_Address=0;
-							pageAdress=adres+((rindex-IHEX_DATA_BEGIN)>>1)+1; // Ustalamy nowy adres strony danych (odczytany z ostatniego rekordu ihex plus juz wykorzystane dane z rekordu)
+								writePage(pageAdress,bufor_strony, real_programing);
+								// Weryfikacja zapisanej strony
+								verifyPage(pageAdress, bufor_strony);
+								Byte_Address=0;
+								pageAdress=adres+((rindex-IHEX_DATA_BEGIN)>>1)+1; // Ustalamy nowy adres strony danych (odczytany z ostatniego rekordu ihex plus juz wykorzystane dane z rekordu)
 							#ifdef UART_DEBUG
-								UARTprintPage(oldPageAdress,pageAdress-1,po_konwersji);
+								UARTprintPage(oldPageAdress,pageAdress-1,po_konwersji, real_programing);
 							#endif
 							}
 						}
@@ -413,10 +453,10 @@ int main(void)
 					bufor[2]=0;
 					suma_kontrolna_odczytana=hexstr2ui16( bufor, 0, 2 );
 					suma_kontrolna=0x100-suma_kontrolna; //Kodem uzupelnien do 2
-					if(suma_kontrolna!=suma_kontrolna_odczytana) //Mamy prawidlowy rekord
+					if(suma_kontrolna!=suma_kontrolna_odczytana) //Mamy nieprawidlowy rekord
 					{
 					#ifdef UART_DEBUG
-						UARTSendString("\r\n");
+						UARTSendString("\r\nCRC ERR:");
 						UARTuitoa(adres,po_konwersji);
 						UARTSendString(po_konwersji);
 						UARTuitoa(suma_kontrolna,po_konwersji);

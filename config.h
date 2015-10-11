@@ -1,10 +1,11 @@
 #ifndef __CONFIG_H
 	#define __CONFIG_H
-
-	#define BUZZ_DEBUG
+	
+	//#define BUZZ_DEBUG
 	#define UART_DEBUG
 	//#define SD_DEBUG
 	//#define FAT_DEBUG
+	#define CODE_DEBUG
 	#define REAL_PROGRAMING
 
 
@@ -39,7 +40,8 @@
 	#define DDR_BUTT	DDRD
 	#define PORT_BUTT	PORTD
 	#define PIN_BUTT	PIND
-	#define BUTTON		PD5
+	#define BUTT_MENU	PD5
+	#define BUTT_SET	PD6
 
 
 	#define BUZZ_ZERO_LONG 0
@@ -58,5 +60,8 @@
 	//File config
 	#define FILE_NAME "ALD_UPD " //Musi byc 8 znakow, jesli mniej, to uzupelnij spacją
 	#define FILE_EXT "HEX"
+	
+	#define CODE_MASK 0xC0
+	
 
 #endif
