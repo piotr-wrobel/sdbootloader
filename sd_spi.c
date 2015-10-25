@@ -139,7 +139,7 @@ int8_t SD_read(uint32_t sector, uint16_t offset, volatile char * buffer, uint16_
 void SPI_init(void)
 {
 	CS_DDR |= CS; // SD card circuit select as output
-	DDRB |= MOSI + SCK; // MOSI and SCK as outputs
+	DDRB |= MOSI | SCK; // MOSI and SCK as outputs
 	PORTB |= MISO; // pullup in MISO, might not be needed
 	
 	// Enable SPI, master, set clock rate fck/128

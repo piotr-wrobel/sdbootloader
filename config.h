@@ -10,9 +10,9 @@
 
 
 	// SPI config
-	#define CS (1<<PB2)
-	#define CS_PORT PORTB
-	#define CS_DDR DDRB
+	#define CS (1<<PB3)
+	#define CS_PORT PORTC
+	#define CS_DDR DDRC
 	#define MOSI (1<<PB3)
 	#define MISO (1<<PB4)
 	#define SCK (1<<PB5)
