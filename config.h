@@ -10,7 +10,7 @@
 
 
 	// SPI config
-	#define CS (1<<PB3)
+	#define CS (1<<PC3)
 	#define CS_PORT PORTC
 	#define CS_DDR DDRC
 	#define MOSI (1<<PB3)
