@@ -16,6 +16,7 @@
 	#define MOSI (1<<PB3)
 	#define MISO (1<<PB4)
 	#define SCK (1<<PB5)
+	#define SS (1<<PB2)
 
 	//SD commands
 	#define SD_GO_IDLE 0
