@@ -26,6 +26,12 @@ static void SD_readR3R7(uint8_t * db)
 	SPI_read();//Skip CRC7	
 }
 
+void SD_release(void)
+{
+	CS_DISABLE();
+	SPI_read();
+}
+
 char SD_init(void) 
 {
     uint8_t i,response,cmd,sd_version;

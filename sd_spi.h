@@ -21,6 +21,7 @@
 	uint32_t sd_sector;
 	uint16_t sd_pos;
 
+	void SD_release(void);
 	char SD_init(void);
 	void SPI_init(void);
 	uint8_t SPI_write(uint8_t ch);
