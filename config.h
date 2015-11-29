@@ -1,11 +1,11 @@
 #ifndef __CONFIG_H
 	#define __CONFIG_H
 	
-	//#define BUZZ_DEBUG
-	#define UART_DEBUG
+	#define BUZZ_DEBUG
+	//#define UART_DEBUG
 	//#define SD_DEBUG
 	//#define FAT_DEBUG
-	#define CODE_DEBUG
+	//#define CODE_DEBUG
 	#define REAL_PROGRAMING
 
 

@@ -266,6 +266,7 @@ int main(void)
 		//UARTSendString_P((void *)SD_ERROR);
 		UARTSendString("\r\nSD ERROR!");
 	#endif	
+		SD_release(); //Zwalniamy kartê SD
 		jump_to_app();
     }
 	
@@ -279,6 +280,7 @@ int main(void)
 		//UARTSendString_P((void *)FAT_ERROR);
 		UARTSendString("\r\nFAT ERROR!");
 	#endif	
+		SD_release(); //Zwalniamy kartê SD
 		jump_to_app();
     }
 
@@ -292,7 +294,8 @@ int main(void)
 		//UARTSendString_P((void *)FILE_ERROR);
 		UARTSendString("\r\nFILE ERROR!");
 	#endif	
-        jump_to_app();
+        SD_release(); //Zwalniamy kartê SD
+		jump_to_app();
     }
 	
 	
@@ -478,6 +481,7 @@ int main(void)
 			}
 		}
     }
+	SD_release(); //Zwalniamy kartê SD
 #ifdef UART_DEBUG
 	UARTSendString("\r\nGotowe!");
 #endif
