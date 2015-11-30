@@ -237,12 +237,12 @@ int main(void)
 	_delay_ms(3000); //Czekamy 3 sekundy
 	if(PIN_BUTT&(1<<BUTT_MENU))
 		jump_to_app(); //Byl wcisniety, ale nie jest, uciekamy z bootloadera
-	
 	if(PIN_BUTT&(1<<BUTT_SET))
 		real_programing=1;
 	else
 		real_programing=0;
-	
+	SD_PWR_ON(); //Zasilanie na karte SD
+	_delay_ms(500); //Inicjacja karty	
 #ifdef BUZZ_DEBUG
 	BUZZ_DDR |= BUZZ;
 	BUZZ_PORT &=~ BUZZ;
@@ -257,6 +257,8 @@ int main(void)
 	SPI_init();
     
 	ret = SD_init();
+	if(ret==1)
+		ret = SD_init();
 	if(ret) 
 	{
 	#ifdef BUZZ_DEBUG
@@ -266,7 +268,7 @@ int main(void)
 		//UARTSendString_P((void *)SD_ERROR);
 		UARTSendString("\r\nSD ERROR!");
 	#endif	
-		SD_release(); //Zwalniamy kartê SD
+		SD_PWR_OFF(); //Wylaczamy zasilanie SD
 		jump_to_app();
     }
 	
@@ -280,7 +282,7 @@ int main(void)
 		//UARTSendString_P((void *)FAT_ERROR);
 		UARTSendString("\r\nFAT ERROR!");
 	#endif	
-		SD_release(); //Zwalniamy kartê SD
+		SD_PWR_OFF(); //Wylaczamy zasilanie SD
 		jump_to_app();
     }
 
@@ -294,7 +296,7 @@ int main(void)
 		//UARTSendString_P((void *)FILE_ERROR);
 		UARTSendString("\r\nFILE ERROR!");
 	#endif	
-        SD_release(); //Zwalniamy kartê SD
+        SD_PWR_OFF(); //Wylaczamy zasilanie SD
 		jump_to_app();
     }
 	
@@ -481,14 +483,14 @@ int main(void)
 			}
 		}
     }
-	SD_release(); //Zwalniamy kartê SD
 #ifdef UART_DEBUG
 	UARTSendString("\r\nGotowe!");
 #endif
 #ifdef BUZZ_DEBUG
 	buzzDebug(BUZZ_ONE_LONG,BUZZ_END,200);
 #endif
-    asm volatile ( "clr __zero_reg__" );
+    SD_PWR_OFF(); //Wylaczamy zasilanie SD
+	asm volatile ( "clr __zero_reg__" );
     SREG = 0;   // Ustawiamy rej statusu
     SP = RAMEND; // i wsk stosu
 	sei();

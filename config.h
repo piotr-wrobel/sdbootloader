@@ -17,7 +17,10 @@
 	#define MISO (1<<PB4)
 	#define SCK (1<<PB5)
 	#define SS (1<<PB2)
-
+	#define SD_PWR (1<<PB0)
+	#define SD_PWR_DDR DDRB
+	#define SD_PWR_PORT PORTB
+	
 	//SD commands
 	#define SD_GO_IDLE 0
 	#define SD_SEND_OP_COND 1

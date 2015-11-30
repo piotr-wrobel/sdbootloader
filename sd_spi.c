@@ -26,6 +26,25 @@ static void SD_readR3R7(uint8_t * db)
 	SPI_read();//Skip CRC7	
 }
 
+void SD_PWR_ON(void)
+{
+#ifdef SD_PWR
+	SD_PWR_DDR|=SD_PWR;
+	SD_PWR_PORT &= ~SD_PWR;
+#endif	
+}
+
+void SD_PWR_OFF(void)
+{
+#ifdef SD_PWR
+	CS_DDR &= ~CS; // SD card circuit select as input
+	DDRB &= ~(MOSI | SCK | MISO); // MOSI, SCK and MISO as input
+	PORTB &= ~MISO; // pulldown in MISO
+	SD_PWR_DDR|=SD_PWR;
+	SD_PWR_PORT |= SD_PWR;
+#endif	
+}
+
 void SD_release(void)
 {
 	CS_DISABLE();

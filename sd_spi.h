@@ -20,7 +20,9 @@
 
 	uint32_t sd_sector;
 	uint16_t sd_pos;
-
+	
+	void SD_PWR_ON(void);
+	void SD_PWR_OFF(void);
 	void SD_release(void);
 	char SD_init(void);
 	void SPI_init(void);
