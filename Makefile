@@ -190,7 +190,8 @@ LDFLAGS += $(patsubst %,-L%,$(EXTRALIBDIRS))
 # to get a full listing.
 #
 
-AVRDUDE_PROGRAMMER = avrispmkII
+#AVRDUDE_PROGRAMMER = avrispmkII
+AVRDUDE_PROGRAMMER = usbasp
 AVRDUDE_PORT = usb
 #AVRDUDE_PROGRAMMER = stk200
 #AVRDUDE_PORT = lpt1

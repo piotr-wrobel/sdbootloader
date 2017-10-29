@@ -26,11 +26,10 @@ static void UARTSendByte( const char Data )
 uint8_t UARTSendString_P(const uint8_t *FlashLoc)
 {
     uint8_t cnt = 0;
-	register char znak;
-	while (znak=pgm_read_byte(FlashLoc++))
+	while(pgm_read_byte(FlashLoc))
 	{
-		UARTSendByte(znak);
-		cnt++;
+		 UARTSendByte(pgm_read_byte(FlashLoc++));
+		 cnt++;
 	}
 	return cnt;
 }
