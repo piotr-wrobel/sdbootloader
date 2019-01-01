@@ -1,3 +1,7 @@
+// Obsługa kart SD w projekcie SDBootloader bazuje na poradniku 
+// Simple FAT and SD Tutorial (http://codeandlife.com/2012/04/02/simple-fat-and-sd-tutorial-part-1/)
+// modyfikacje pvg, licencja GPL 3.0
+
 #include "sd_spi.h"
 
 uint8_t SPI_write(uint8_t ch)

@@ -1,3 +1,7 @@
+// Obsługa FAT16 w projekcie SDBootloader bazuje na poradniku 
+// Simple FAT and SD Tutorial (http://codeandlife.com/2012/04/02/simple-fat-and-sd-tutorial-part-1/)
+// modyfikacje pvg, licencja GPL 3.0
+
 #include <avr/io.h>
 #ifndef __FAT16_H
 #define __FAT16_H

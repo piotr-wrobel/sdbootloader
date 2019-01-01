@@ -1,17 +1,9 @@
-################################################################################################
-#                  „Widzimy daleko, bo stoimy na ramionach olbrzyma”                           #
-# Ten plik zosta³ zmodyfikowany przez mlodedzrwale, wszystkie komentarze dodane przez osoby    #
-# które wczeœniej teorzy³y ten plik s¹ niezmienione na samym koñcu pliku.                      #
-################################################################################################
-
+# Projekt SDBootloader jest napisany dla procesora Atmega 328(p)
 
 ################################################################################################
-# Wybierz odpowedni procesor (MCU), dostêpne procesory to:                                     #
-# atmega48; atmega8; atmega8a; atmega88; atmega16; atmega162; atmega168; atmega169; Atmega3250 #
-# atmega328; atmega32; atmega3290; atmega644                                                   #
-# (wybranie procesora spoza listy zakoñczy siê b³êdem)                                         #
-# Nastêpnie wybierz czêstotliwoœæ, z jak¹ pracowa³ bêdzie procesor (F_CPU) oraz prêdkoœæ pracy #
-# UART (BAUD)                                                                                  #
+#                  â€žWidzimy daleko, bo stoimy na ramionach olbrzymaâ€                           #
+# Ten plik zostaÅ‚ zmodyfikowany przez mlodedzrwale, wszystkie komentarze dodane przez osoby    #
+# ktÃ³re wczeÅ›niej teorzyÅ‚y ten plik sÄ… niezmienione na samym koÅ„cu pliku.                      #
 ################################################################################################
 
 
@@ -22,7 +14,7 @@ BAUD = 57600
 
 
 ################################################################################################
-#######               Definicje PROCESORÓW/ DEFINITONS OF DEVICES                       ########
+#######               Definicje PROCESORÃ“W/ DEFINITONS OF DEVICES                       ########
 
 # Atmega328
 ifeq ($(MCU), atmega328)
@@ -433,9 +425,9 @@ program: $(TARGET).hex $(TARGET).eep
 
 
 # Hey Emacs, this is a -*- makefile -*-
-# >> Ten plik zosta³ zmodyfikowany patrz: opcje linkera i kompilatora.
+# >> Ten plik zostaÅ‚ zmodyfikowany patrz: opcje linkera i kompilatora.
 #----------------------------------------------------------------------------
-# WinAVR Makefile Template written by Eric B. Weddington, Jörg Wunsch, et al.
+# WinAVR Makefile Template written by Eric B. Weddington, JÃ¶rg Wunsch, et al.
 #
 # Released to the Public Domain
 #

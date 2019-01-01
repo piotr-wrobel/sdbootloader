@@ -1,9 +1,21 @@
+//
+// SDBootloader bazuje na kodzie projektu
+// http://www.mlodedrwale.pl/2013/06/09/bootlader-avr-ferret/ 
+// dla procesor√≥w AVR, oryginalna licencja MIT, po zmianach zastƒÖpiona zgodnƒÖ GPL 3.0
+// 
+// Zmiany (obs≈Çuga karty SD, parsowanie formatu INTEL HEX, dekodowanie zaszyfrowanego wsadu )
+// pvg
+//
+//
+// Szyfrowanie wsadu za pomocƒÖ programu sdbootloader_encoder (https://github.com/piotr-wrobel/sdbootloader_encoder)
+//
+
 /*
 
-                  ÑWidzimy daleko, bo stoimy na ramionach olbrzymaî     
+                  ‚ÄûWidzimy daleko, bo stoimy na ramionach olbrzyma‚Äù     
 				  
 				                        
- Program ten to rozwiniÍta i poprawiona przez mlodedrwale wersja programu zamieszczonego na:
+ Program ten to rozwiniƒôta i poprawiona przez mlodedrwale wersja programu zamieszczonego na:
  http://www.elektroda.pl/rtvforum/topic1698801-0.html 
           
 
@@ -14,7 +26,7 @@
 
 
 ///////////////////////////////////////////////////////////////////////////////////
-// Maciej Kucia KrakÛw 2010 sProgATM8                                            //
+// Maciej Kucia Krak√≥w 2010 sProgATM8                                            //
 //                                                                               //
 // Licencja MIT                                                                  //
 ///////////////////////////////////////////////////////////////////////////////////
@@ -119,12 +131,12 @@
 // const char FAT_ERROR[]	PROGMEM="\r\nFAT ERROR!";
 // const char FILE_ERROR[]	PROGMEM="\r\nFILE ERROR!";
 
-//Pozwala wykonaÊ skok do kodu po zakoÒczeniu pracy bootloadera
+//Pozwala wykonaƒá skok do kodu po zako≈Ñczeniu pracy bootloadera
 static void (*jump_to_app)(void) = 0x0000;
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// RÛønoúci zwiπzane z pozycjπ bootloadera w pamiÍci
+// R√≥≈ºno≈õci zwiƒÖzane z pozycjƒÖ bootloadera w pamiƒôci
 static void skip(void) __attribute__ ((naked, section (".vectors") ));
 static void skip(void)
 {
@@ -136,7 +148,7 @@ static void setup(void)
 {
 	
 	cli();
-	//Inicjacja stosu i rejestru statusu, daje rÛwnieø czas dla uart na inicjalizacjÍ
+	//Inicjacja stosu i rejestru statusu, daje r√≥wnie≈º czas dla uart na inicjalizacjƒô
     asm volatile ( "clr __zero_reg__" );
     SREG = 0;   // Ustawiamy rej statusu
     SP = RAMEND; // i wsk stosu
@@ -149,8 +161,8 @@ static void setup(void)
     static void __init3( 
         void ) 
     { 
-        /* wy≥πczenie watchdoga (w tych mikrokontrolerach, w ktÛrych watchdog 
-         * ma moøliwoúÊ generowania przerwania pozostaje on teø aktywny po 
+        /* wy≈ÇƒÖczenie watchdoga (w tych mikrokontrolerach, w kt√≥rych watchdog 
+         * ma mo≈ºliwo≈õƒá generowania przerwania pozostaje on te≈º aktywny po 
          * resecie) */ 
         MCUSR = 0; 
         WDTCSR = 1 << WDCE | 1 << WDE; 
@@ -212,7 +224,7 @@ static void writePage(uint16_t pageAdress,uint8_t *bufor_strony,uint8_t real_pro
 		boot_page_fill( bufor_index, (uint16_t)(bufor_strony[bufor_index+1]<<8)+bufor_strony[bufor_index] );
 #ifdef REAL_PROGRAMING
 	if(real_programing)
-		boot_page_erase( pageAdress ); //kasujemy stronÍ
+		boot_page_erase( pageAdress ); //kasujemy stronƒô
 	#ifdef BUZZ_DEBUG
 		buzzDebug(BUZZ_ZERO_LONG,1,50);
 	#endif
@@ -341,7 +353,7 @@ int main(void)
 					bufor[rindex-IHEX_RADRESS_BEGIN]=0;
 					adres=hexstr2ui16(bufor,0,4);
 					if(pageAdress==0xFFFF)
-						pageAdress=adres; //Pierwszy adres powinien byc poczatkiem strony - pÛki co brak walidacji
+						pageAdress=adres; //Pierwszy adres powinien byc poczatkiem strony - p√≥ki co brak walidacji
 					else if(Byte_Address > 0 && (pageAdress + Byte_Address) != adres) //Mamy juz cos w buforze, a nowy adres rekordu nie jest kontynuacja
 					{
 					#ifdef UART_DEBUG
